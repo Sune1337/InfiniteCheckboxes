@@ -5,7 +5,6 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <OutputType>Library</OutputType>
-        <RootNamespace>CheckBoxApiv1</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -14,6 +13,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\GrainInterfaces\GrainInterfaces.csproj" />
+      <ProjectReference Include="..\Two56BitId\Two56BitId.csproj" />
     </ItemGroup>
 
 </Project>

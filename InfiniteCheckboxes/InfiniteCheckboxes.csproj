@@ -14,12 +14,16 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\CheckboxApiv1\CheckboxApiv1.csproj" />
+      <ProjectReference Include="..\CheckboxHubv1\CheckboxHubv1.csproj" />
     </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="Microsoft.Orleans.Client" Version="9.1.2" />
       <PackageReference Include="Microsoft.Orleans.Clustering.Redis" Version="9.1.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="ClientApp\api\models\" />
     </ItemGroup>
 
 </Project>

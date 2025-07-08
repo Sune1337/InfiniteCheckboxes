@@ -29,7 +29,7 @@ var builder = Host.CreateDefaultBuilder(args)
                 options.ConfigurationOptions.DefaultDatabase = 0;
                 options.CreateMultiplexer = clusteringOptions => Task.FromResult<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(clusteringOptions.ConfigurationOptions));
             })
-            .AddRedisGrainStorageAsDefault(options =>
+            .AddRedisGrainStorage("CheckboxStore", options =>
             {
                 options.ConfigurationOptions = ConfigurationOptions.Parse(clusterRedisConnectionString);
                 options.ConfigurationOptions.DefaultDatabase = 1;

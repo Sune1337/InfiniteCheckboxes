@@ -1,0 +1,5 @@
+@for (checkboxPage of checkboxPages(); track checkboxPage.id) {
+  @for (checkbox of checkboxPage.state; track $index) {
+    <input type="checkbox" name="{{checkboxPage.id + '-' + $index}}" [checked]="checkbox !== 0" (change)="whenCheckboxChanged(checkboxPage.id, $index, $event)">
+  }
+}

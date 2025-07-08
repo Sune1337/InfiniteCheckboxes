@@ -1,3 +1,5 @@
+using CheckboxHubv1;
+
 using InfiniteCheckboxes.Utils;
 
 using Orleans.Configuration;
@@ -6,6 +8,7 @@ using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddSignalR();
 builder.Services.AddControllers();
 builder.Services.AddDefaultExceptionHandler();
 builder.UseOrleansClient(clientBuilder =>
@@ -44,6 +47,8 @@ app.UseExceptionHandler();
 
 app.UseStaticFiles();
 app.UseRouting();
+
+app.MapCheckboxHubv1("/hubs/v1/CheckboxHub");
 
 app.MapControllerRoute(
     name: "default",
