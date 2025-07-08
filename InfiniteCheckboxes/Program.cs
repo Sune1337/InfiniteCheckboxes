@@ -1,9 +1,35 @@
 using InfiniteCheckboxes.Utils;
 
+using Orleans.Configuration;
+
+using StackExchange.Redis;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddDefaultExceptionHandler();
+builder.UseOrleansClient(clientBuilder =>
+{
+    var clusterRedisConnectionString = builder.Configuration.GetConnectionString("ClusterRedis");
+    if (string.IsNullOrWhiteSpace(clusterRedisConnectionString))
+    {
+        throw new Exception("ClusterRedis connection-string is not set.");
+    }
+
+    clientBuilder
+        .Configure<ClusterOptions>(options =>
+            {
+                options.ClusterId = "CheckboxCluster";
+                options.ServiceId = "CheckboxService";
+            }
+        )
+        .UseRedisClustering(options =>
+        {
+            options.ConfigurationOptions = ConfigurationOptions.Parse(clusterRedisConnectionString);
+            options.ConfigurationOptions.DefaultDatabase = 0;
+            options.CreateMultiplexer = clusteringOptions => Task.FromResult<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(clusteringOptions.ConfigurationOptions));
+        });
+});
 
 var app = builder.Build();
 

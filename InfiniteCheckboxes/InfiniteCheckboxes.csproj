@@ -14,7 +14,12 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\CheckBoxApiv1\CheckBoxApiv1.csproj" />
+      <ProjectReference Include="..\CheckboxApiv1\CheckboxApiv1.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Orleans.Client" Version="9.1.2" />
+      <PackageReference Include="Microsoft.Orleans.Clustering.Redis" Version="9.1.2" />
     </ItemGroup>
 
 </Project>
