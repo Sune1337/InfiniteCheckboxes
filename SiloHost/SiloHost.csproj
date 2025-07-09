@@ -26,6 +26,7 @@
     <ItemGroup>
       <ProjectReference Include="..\CheckboxGrain\CheckboxGrain.csproj" />
       <ProjectReference Include="..\GrainInterfaces\GrainInterfaces.csproj" />
+      <ProjectReference Include="..\RedisMessages\RedisMessages.csproj" />
     </ItemGroup>
 
 </Project>

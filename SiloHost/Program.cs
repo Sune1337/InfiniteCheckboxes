@@ -1,13 +1,22 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using Orleans.Configuration;
+
+using RedisMessages;
+using RedisMessages.Options;
 
 using SiloHost.Utils;
 
 using StackExchange.Redis;
 
 var builder = Host.CreateDefaultBuilder(args)
+    .ConfigureServices((hostBuilderContext, serviceCollection) =>
+    {
+        serviceCollection.Configure<RedisMessagePublisherOptions>(o => o.RedisConnectionString = hostBuilderContext.Configuration.GetConnectionString("ClusterRedis"));
+        serviceCollection.AddRedisMessagePublisher();
+    })
     .UseOrleans((hostBuilderContext, siloBuilder) =>
     {
         var clusterRedisConnectionString = hostBuilderContext.Configuration.GetConnectionString("ClusterRedis");

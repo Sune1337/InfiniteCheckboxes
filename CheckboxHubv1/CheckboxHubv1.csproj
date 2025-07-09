@@ -9,10 +9,12 @@
 
     <ItemGroup>
       <PackageReference Include="Microsoft.Orleans.Sdk" Version="9.1.2" />
+      <PackageReference Include="StackExchange.Redis" Version="2.8.16" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\GrainInterfaces\GrainInterfaces.csproj" />
+      <ProjectReference Include="..\RedisMessages\RedisMessages.csproj" />
       <ProjectReference Include="..\Two56BitId\Two56BitId.csproj" />
     </ItemGroup>
 

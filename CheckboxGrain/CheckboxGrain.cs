@@ -4,6 +4,8 @@ using global::CheckboxGrain.Models;
 
 using GrainInterfaces;
 
+using RedisMessages;
+
 public class CheckboxGrain : Grain, ICheckboxGrain
 {
     #region Constants
@@ -21,6 +23,8 @@ public class CheckboxGrain : Grain, ICheckboxGrain
     #region Fields
 
     private readonly IPersistentState<CheckboxState> _checkboxState;
+    private readonly IRedisMessagePublisherManager _redisMessagePublisherManager;
+    private string? _grainId;
 
     #endregion
 
@@ -28,10 +32,12 @@ public class CheckboxGrain : Grain, ICheckboxGrain
 
     public CheckboxGrain(
         [PersistentState("CheckboxState", "CheckboxStore")]
-        IPersistentState<CheckboxState> checkboxState
+        IPersistentState<CheckboxState> checkboxState,
+        IRedisMessagePublisherManager redisMessagePublisherManager
     )
     {
         _checkboxState = checkboxState;
+        _redisMessagePublisherManager = redisMessagePublisherManager;
     }
 
     #endregion
@@ -41,6 +47,12 @@ public class CheckboxGrain : Grain, ICheckboxGrain
     public Task<byte[]> GetCheckboxes()
     {
         return Task.FromResult(_checkboxState.State?.Checkboxes ?? EmptyCheckboxPage);
+    }
+
+    public override Task OnActivateAsync(CancellationToken cancellationToken)
+    {
+        _grainId = this.GetPrimaryKeyString();
+        return Task.CompletedTask;
     }
 
     public async Task SetCheckbox(int index, byte value)
@@ -67,6 +79,11 @@ public class CheckboxGrain : Grain, ICheckboxGrain
             // The checkbox state changed.
             _checkboxState.State.Checkboxes[index] = normalValue;
             await _checkboxState.WriteStateAsync();
+        }
+
+        if (_grainId != null)
+        {
+            await _redisMessagePublisherManager.PublishCheckboxUpdateAsync(_grainId, index, normalValue);
         }
     }
 

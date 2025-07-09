@@ -6,7 +6,6 @@ import { base64ToNumberArray } from '../utils/base64-to-number-array';
 
 export type CheckboxPages = { [id: string]: number[] };
 type CheckboxPageSubscriptions = { [id: string]: Subscription };
-type CheckboxPageUpdate = { index: number, state: number };
 
 @Injectable({
   providedIn: 'root'
@@ -58,8 +57,12 @@ export class CheckboxesHubService {
             let items: number[] = [];
 
             // Listen for updated data.
-            hubConnection.on(methodName, (item: CheckboxPageUpdate) => {
-              items[item.index] = item.state;
+            hubConnection.on(`${methodName}Update`, (pageId: string, index: number, value: number) => {
+              if (pageId !== id) {
+                return;
+              }
+
+              items[index] = value;
               subscriber.next(items);
             });
 

@@ -1,4 +1,5 @@
 using CheckboxHubv1;
+using CheckboxHubv1.Options;
 
 using InfiniteCheckboxes.Utils;
 
@@ -8,9 +9,15 @@ using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure options.
+builder.Services.Configure<CheckboxObserverOptions>(o => o.RedisConnectionString = builder.Configuration.GetConnectionString("ClusterRedis"));
+
+// ADd services.
 builder.Services.AddSignalR();
 builder.Services.AddControllers();
 builder.Services.AddDefaultExceptionHandler();
+builder.Services.AddCheckboxObserverService();
+
 builder.UseOrleansClient(clientBuilder =>
 {
     var clusterRedisConnectionString = builder.Configuration.GetConnectionString("ClusterRedis");
