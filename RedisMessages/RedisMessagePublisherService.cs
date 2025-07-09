@@ -45,7 +45,7 @@ public class RedisMessagePublisherService : IHostedService, IRedisMessagePublish
 
     #region Public Methods and Operators
 
-    public async Task PublishCheckboxUpdateAsync(string id, int index, byte value)
+    public async Task PublishCheckboxUpdateAsync(string id, int index, bool value)
     {
         await _checkboxUpdateChannel.Writer.WriteAsync(
             new CheckboxUpdateMessage
@@ -54,7 +54,7 @@ public class RedisMessagePublisherService : IHostedService, IRedisMessagePublish
                 CheckboxUpdate = new CheckboxUpdate
                 {
                     Index = index,
-                    Value = value
+                    Value = (byte)(value ? 1 : 0)
                 }
             }
         );

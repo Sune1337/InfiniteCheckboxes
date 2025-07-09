@@ -5,7 +5,7 @@ import { sortHex } from '../../../utils/hex-string-sorter';
 
 export interface CheckboxPage {
   id: string;
-  state: number[];
+  state: boolean[];
 }
 
 @Component({

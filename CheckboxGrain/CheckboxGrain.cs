@@ -1,6 +1,7 @@
 namespace CheckboxGrain;
 
 using global::CheckboxGrain.Models;
+using global::CheckboxGrain.Utils;
 
 using GrainInterfaces;
 
@@ -10,13 +11,7 @@ public class CheckboxGrain : Grain, ICheckboxGrain
 {
     #region Constants
 
-    private const int CheckboxPageSize = 1000;
-
-    #endregion
-
-    #region Static Fields
-
-    private static readonly byte[] EmptyCheckboxPage = new byte[CheckboxPageSize];
+    private const int CheckboxPageSize = 4096;
 
     #endregion
 
@@ -24,6 +19,8 @@ public class CheckboxGrain : Grain, ICheckboxGrain
 
     private readonly IPersistentState<CheckboxState> _checkboxState;
     private readonly IRedisMessagePublisherManager _redisMessagePublisherManager;
+
+    private bool[]? _decompressedData;
     private string? _grainId;
 
     #endregion
@@ -44,9 +41,9 @@ public class CheckboxGrain : Grain, ICheckboxGrain
 
     #region Public Methods and Operators
 
-    public Task<byte[]> GetCheckboxes()
+    public Task<byte[]?> GetCheckboxes()
     {
-        return Task.FromResult(_checkboxState.State?.Checkboxes ?? EmptyCheckboxPage);
+        return Task.FromResult(_checkboxState.State?.Checkboxes);
     }
 
     public override Task OnActivateAsync(CancellationToken cancellationToken)
@@ -57,9 +54,8 @@ public class CheckboxGrain : Grain, ICheckboxGrain
 
     public async Task SetCheckbox(int index, byte value)
     {
-        var normalValue = value == 0 ? (byte)0 : (byte)1;
-
-        if (_checkboxState.State == null && normalValue == 0)
+        var normalValue = value != 0;
+        if (_checkboxState.State == null && !normalValue)
         {
             // There is no state, and user wants to set a value to 0.
             // The default value is 0 so no need to update state.
@@ -67,17 +63,18 @@ public class CheckboxGrain : Grain, ICheckboxGrain
         }
 
         _checkboxState.State ??= new CheckboxState();
-        _checkboxState.State.Checkboxes ??= new byte[CheckboxPageSize];
+        _decompressedData ??= CompressedBitArray.Decompress(_checkboxState.State.Checkboxes) ?? new bool[CheckboxPageSize];
 
-        if (index < 0 || index >= _checkboxState.State.Checkboxes.Length)
+        if (index < 0 || index >= _decompressedData.Length)
         {
             throw new ArgumentOutOfRangeException(nameof(index));
         }
 
-        if (_checkboxState.State.Checkboxes[index] != normalValue)
+        if (_decompressedData[index] != normalValue)
         {
             // The checkbox state changed.
-            _checkboxState.State.Checkboxes[index] = normalValue;
+            _decompressedData[index] = normalValue;
+            _checkboxState.State.Checkboxes = CompressedBitArray.Compress(_decompressedData);
             await _checkboxState.WriteStateAsync();
         }
 

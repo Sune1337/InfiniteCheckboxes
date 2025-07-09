@@ -37,7 +37,7 @@ public partial class CheckboxHub : Hub
 
     #region Public Methods and Operators
 
-    public async Task<byte[]> CheckboxesSubscribe(string id)
+    public async Task<byte[]?> CheckboxesSubscribe(string id)
     {
         if (Two56BitIdParser.TryParse256BitId(id, out var parsedId) == false)
         {
@@ -69,10 +69,11 @@ public partial class CheckboxHub : Hub
         ComboboxIds?.Remove(parsedId);
     }
 
-    public override async Task OnConnectedAsync()
+    public override Task OnConnectedAsync()
     {
         // Create a list to keep track of which checkbox-pages the connection subscribes to.
         Context.Items.Add("ComboboxIds", new HashSet<string>());
+        return Task.CompletedTask;
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)

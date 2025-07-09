@@ -2,9 +2,9 @@ import { inject, Injectable } from '@angular/core';
 import { first, Observable, shareReplay, Subject, Subscription, timer } from "rxjs";
 import { HubConnection, HubConnectionBuilder, RetryContext } from "@microsoft/signalr";
 import { HubStatus, HubStatusService } from './hub-status.service';
-import { base64ToNumberArray } from '../utils/base64-to-number-array';
+import { base64ToUint8Array, decompressBitArray } from '../utils/decompress';
 
-export type CheckboxPages = { [id: string]: number[] };
+export type CheckboxPages = { [id: string]: boolean[] };
 type CheckboxPageSubscriptions = { [id: string]: Subscription };
 
 @Injectable({
@@ -47,14 +47,14 @@ export class CheckboxesHubService {
     delete this.privateCheckboxPages[id];
   }
 
-  private createDataObservable = (methodName: string, id: string): Observable<number[]> => {
-    return new Observable<number[]>(
+  private createDataObservable = (methodName: string, id: string): Observable<boolean[]> => {
+    return new Observable<boolean[]>(
       subscriber => {
         let unsubscribeData: () => Promise<void>;
 
         const innerSubscription = this.hubConnectionObservable
           .subscribe(async hubConnection => {
-            let items: number[] = [];
+            let items: boolean[] = [];
 
             // Listen for updated data.
             hubConnection.on(`${methodName}Update`, (pageId: string, index: number, value: number) => {
@@ -62,13 +62,18 @@ export class CheckboxesHubService {
                 return;
               }
 
-              items[index] = value;
+              items[index] = value != 0;
               subscriber.next(items);
             });
 
             // Subscribe to items and process initial data.
-            const result = await hubConnection.invoke(`${methodName}Subscribe`, id);
-            items = base64ToNumberArray(result);
+            const base64Data = await hubConnection.invoke(`${methodName}Subscribe`, id);
+            if (base64Data === null) {
+              items = Array(4096);
+            } else {
+              const compressedBytes = base64ToUint8Array(base64Data);
+              items = decompressBitArray(compressedBytes);
+            }
             subscriber.next(items);
 
             // Unsubscribe to data when subscriber leaves.
