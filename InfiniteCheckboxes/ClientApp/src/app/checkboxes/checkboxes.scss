@@ -8,11 +8,16 @@
 .header {
   flex: 0 0 auto; /* Don't grow, don't shrink, auto height */
   padding: 16px;
+  text-align: center;
 }
 
 .scroll-container {
-  flex: 1; /* Take up remaining space */
-  min-height: 0; /* Important! Allows flex child to scroll */
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center; // Centers items horizontally
+
 }
 
 .checkbox-grid {
@@ -22,6 +27,10 @@
 
 .scroll-item {
   overflow-x: auto;
+  display: flex;
+  justify-content: center; // Centers the grid horizontally
+  width: 100%;
+
 
   input[type="checkbox"] {
     width: 16px;
