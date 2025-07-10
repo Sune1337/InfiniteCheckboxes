@@ -1,0 +1,46 @@
+.layout-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+}
+
+.header {
+  flex: 0 0 auto; /* Don't grow, don't shrink, auto height */
+  padding: 16px;
+}
+
+.scroll-container {
+  flex: 1; /* Take up remaining space */
+  min-height: 0; /* Important! Allows flex child to scroll */
+}
+
+.checkbox-grid {
+  display: grid;
+  border-bottom: 1px solid #ccc;
+}
+
+.scroll-item {
+  overflow-x: auto;
+
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 4px;
+  }
+
+  &.width-32 {
+    /* page-size (4096) / page-width (32) * item-size (24) + 1px for border in checkbox-grid. */
+    height: 3072px+1px;
+  }
+
+  &.width-64 {
+    /* page-size (4096) / page-width (64) * item-size (24) + 1px for border in checkbox-grid. */
+    height: 1536px+1px;
+  }
+
+  &.width-128 {
+    /* page-size (4096) / page-width (128) * item-size (24) + 1px for border in checkbox-grid. */
+    height: 768px+1px;
+  }
+}

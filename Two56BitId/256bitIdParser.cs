@@ -15,7 +15,7 @@ public static partial class Two56BitIdParser
             return false;
         }
 
-        parsedId = id.TrimStart('0');
+        parsedId = id == "0" ? id : id.TrimStart('0');
         return true;
     }
 
