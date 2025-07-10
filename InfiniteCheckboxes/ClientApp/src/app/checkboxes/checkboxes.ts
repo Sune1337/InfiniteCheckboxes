@@ -75,7 +75,7 @@ export class Checkboxes implements OnInit, AfterViewInit {
           this.goToPage(id);
         });
       } else {
-        this.router.navigate(['', 'Welcome!']);
+        this.router.navigate(['', 'Welcome!'], { replaceUrl: true });
       }
     });
   }
