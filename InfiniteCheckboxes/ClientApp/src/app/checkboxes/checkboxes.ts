@@ -66,8 +66,14 @@ export class Checkboxes implements OnInit, AfterViewInit {
     this.activatedRoute.paramMap.subscribe(params => {
       const id = params.get('id');
       if (id) {
-        this.pageInput.set(id);
-        this.goToPage(id)
+        // For some reason initial scrolling on page-reload does not work unless we do the initial navigation in setTimeout here.
+        // It causes scrolling to work when using a page-id that needs to be hashed; and not to work when using a number or hex-string.
+        this.checkBoxPages.set([]);
+
+        setTimeout(() => {
+          this.pageInput.set(id);
+          this.goToPage(id);
+        });
       } else {
         this.router.navigate(['', 'Welcome!']);
       }
@@ -78,6 +84,10 @@ export class Checkboxes implements OnInit, AfterViewInit {
     // Subscribe to view changes
     this.virtualFor.viewChange.subscribe(event => {
       const data = this.checkBoxPages();
+      if (data.length === 0) {
+        return;
+      }
+
       const firstRenderedId = data[event.start].index;
       const lastIndex = event.end >= data.length - 1 ? data.length - 1 : event.end;
       const lastRenderedId = data[lastIndex].index;
