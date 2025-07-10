@@ -57,12 +57,15 @@ export class CheckboxesHubService {
             let items: boolean[] = [];
 
             // Listen for updated data.
-            hubConnection.on(`${methodName}Update`, (pageId: string, index: number, value: number) => {
+            hubConnection.on(`${methodName}Update`, (pageId: string, values: number[][]) => {
               if (pageId !== id) {
                 return;
               }
 
-              items[index] = value != 0;
+              for (const value of values) {
+                items[value[0]] = value[1] != 0;
+              }
+
               subscriber.next(items);
             });
 

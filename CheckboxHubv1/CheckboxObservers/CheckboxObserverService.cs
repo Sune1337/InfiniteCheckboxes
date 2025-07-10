@@ -5,6 +5,7 @@ using System.Threading.Channels;
 
 using CheckboxHubv1.Hubs;
 using CheckboxHubv1.Options;
+using CheckboxHubv1.Utils;
 
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
@@ -13,6 +14,16 @@ using RedisMessages;
 using RedisMessages.Messages;
 
 using StackExchange.Redis;
+
+public class CheckboxPageUpdates(ILogger<DebounceValues> debounceLogger)
+{
+    #region Fields
+
+    public readonly DebounceValues DebounceValues = new(debounceLogger);
+    public int Count = 1;
+
+    #endregion
+}
 
 public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
 {
@@ -27,16 +38,18 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
 
     private readonly IHubContext<CheckboxHub> _checkboxHubContext;
     private readonly Channel<CheckboxUpdateMessage> _checkboxUpdateChannel = Channel.CreateUnbounded<CheckboxUpdateMessage>();
+    private readonly ILogger<DebounceValues> _debounceLogger;
     private readonly CancellationTokenSource _readCheckboxUpdateMessagesTaskCancellationToken = new();
     private readonly string _redisConnectionString;
-    private readonly Dictionary<string, int> _subscriptions = new();
+    private readonly Dictionary<string, CheckboxPageUpdates> _subscriptions = new();
+    private readonly Lock _subscriptionsLock = new();
     private Task? _readCheckboxUpdateMessagesTask;
 
     #endregion
 
     #region Constructors and Destructors
 
-    public CheckboxObserverService(IOptions<CheckboxObserverOptions> options, IHubContext<CheckboxHub> checkboxHubContext)
+    public CheckboxObserverService(IOptions<CheckboxObserverOptions> options, IHubContext<CheckboxHub> checkboxHubContext, ILogger<DebounceValues> debounceLogger)
     {
         if (options.Value.RedisConnectionString == null)
         {
@@ -45,6 +58,7 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
 
         _redisConnectionString = options.Value.RedisConnectionString;
         _checkboxHubContext = checkboxHubContext;
+        _debounceLogger = debounceLogger;
     }
 
     #endregion
@@ -77,16 +91,23 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
     public async Task SubscribeAsync(string id)
     {
         var startSubscribe = false;
-        lock (_subscriptions)
+        lock (_subscriptionsLock)
         {
-            if (_subscriptions.TryGetValue(id, out var numberOfSubscriptions) == false)
+            if (_subscriptions.TryGetValue(id, out var subscription) == false)
             {
-                _subscriptions.Add(id, 1);
+                var checkboxPageUpdates = new CheckboxPageUpdates(_debounceLogger);
+                checkboxPageUpdates.DebounceValues.EmitValuesDelegate += async values =>
+                {
+                    await _checkboxHubContext.Clients
+                        .Group($"{HubGroups.CheckboxGroupPrefix}_{id}")
+                        .SendAsync("CheckboxesUpdate", id, values.Select(v => (int[]) [v.Key, v.Value]));
+                };
+                _subscriptions.Add(id, checkboxPageUpdates);
                 startSubscribe = true;
             }
             else
             {
-                _subscriptions[id] = numberOfSubscriptions + 1;
+                subscription.Count++;
             }
         }
 
@@ -99,22 +120,18 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
     public async Task UnsubscribeAsync(string id)
     {
         var stopSubscribe = false;
-        lock (_subscriptions)
+        lock (_subscriptionsLock)
         {
-            if (_subscriptions.TryGetValue(id, out var numberOfSubscriptions) == false)
+            if (_subscriptions.TryGetValue(id, out var checkboxPageUpdates) == false)
             {
                 return;
             }
 
-            numberOfSubscriptions--;
-            if (numberOfSubscriptions == 0)
+            checkboxPageUpdates.Count--;
+            if (checkboxPageUpdates.Count == 0)
             {
                 stopSubscribe = true;
                 _subscriptions.Remove(id);
-            }
-            else
-            {
-                _subscriptions[id] = numberOfSubscriptions;
             }
         }
 
@@ -135,9 +152,14 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
             while (_readCheckboxUpdateMessagesTaskCancellationToken.IsCancellationRequested == false)
             {
                 var checkboxUpdateMessage = await _checkboxUpdateChannel.Reader.ReadAsync(_readCheckboxUpdateMessagesTaskCancellationToken.Token);
-                await _checkboxHubContext.Clients
-                    .Group($"{HubGroups.CheckboxGroupPrefix}_{checkboxUpdateMessage.Id}")
-                    .SendAsync("CheckboxesUpdate", checkboxUpdateMessage.Id, checkboxUpdateMessage.CheckboxUpdate.Index, checkboxUpdateMessage.CheckboxUpdate.Value);
+
+                DebounceValues? debounceValues;
+                lock (_subscriptionsLock)
+                {
+                    debounceValues = _subscriptions.TryGetValue(checkboxUpdateMessage.Id, out var checkboxPageUpdates) ? checkboxPageUpdates.DebounceValues : null;
+                }
+
+                debounceValues?.DebounceValue(checkboxUpdateMessage.CheckboxUpdate.Index, checkboxUpdateMessage.CheckboxUpdate.Value);
             }
         }
 
@@ -159,7 +181,7 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
             return;
         }
 
-        lock (_subscriptions)
+        lock (_subscriptionsLock)
         {
             foreach (var key in _subscriptions.Keys)
             {
