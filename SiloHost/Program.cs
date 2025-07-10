@@ -32,6 +32,10 @@ var builder = Host.CreateDefaultBuilder(args)
                     options.ServiceId = "CheckboxService";
                 }
             )
+            .Configure<GrainCollectionOptions>(options =>
+            {
+                options.CollectionAge = TimeSpan.FromMinutes(5);
+            })
             .UseRedisClustering(options =>
             {
                 options.ConfigurationOptions = ConfigurationOptions.Parse(clusterRedisConnectionString);
