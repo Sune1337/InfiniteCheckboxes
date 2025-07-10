@@ -1,9 +1,10 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, computed, effect, inject, OnInit, signal, ViewChild, WritableSignal } from '@angular/core';
 import { CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CheckboxesHubService, CheckboxPages } from '../../../api/checkboxes-hub.service';
 import { getCheckboxPageId } from '../../../utils/checkbox-page-id';
 import { sortHex } from '../../../utils/hex-string-sorter';
-import { FormsModule } from '@angular/forms';
 
 interface IndexItem {
   index: bigint;
@@ -42,7 +43,6 @@ export class Checkboxes implements OnInit, AfterViewInit {
   @ViewChild(CdkVirtualForOf)
   private virtualFor!: CdkVirtualForOf<any>;
 
-  private readonly defaultPageId: bigint = BigInt(100);
   private readonly MinPageId = BigInt(0);
   private readonly MaxPageId = BigInt('0x' + 'F'.repeat(64)); // 2^256 - 1
 
@@ -51,6 +51,8 @@ export class Checkboxes implements OnInit, AfterViewInit {
   private lastWidth = this.selectedPageWidth();
 
   private checkboxHubService = inject(CheckboxesHubService);
+  private activatedRoute = inject(ActivatedRoute);
+  private router = inject(Router);
 
   constructor() {
     // Register callback to handle updates to checkbox-pages.
@@ -61,7 +63,15 @@ export class Checkboxes implements OnInit, AfterViewInit {
   }
 
   ngOnInit() {
-    this.checkBoxPages.set([this.createCheckboxPage(this.defaultPageId)]);
+    this.activatedRoute.paramMap.subscribe(params => {
+      const id = params.get('id');
+      if (id) {
+        this.pageInput.set(id);
+        this.goToPage(id)
+      } else {
+        this.router.navigate(['', 'Welcome!']);
+      }
+    });
   }
 
   ngAfterViewInit() {
@@ -206,7 +216,24 @@ export class Checkboxes implements OnInit, AfterViewInit {
       return;
     }
 
-    const pageId = await this.parseStringToBigInt(pageInputText);
+    this.router.navigate(['', pageInputText]);
+  }
+
+  protected whenPageInputKeyDown = (event: KeyboardEvent): void => {
+    if (event.key !== 'Enter') {
+      return;
+    }
+
+    const pageInputText = this.pageInput();
+    if (pageInputText === '') {
+      return;
+    }
+
+    this.router.navigate(['', pageInputText]);
+  }
+
+  private goToPage = async (id: string): Promise<void> => {
+    const pageId = await this.parseStringToBigInt(id);
     const existingPage = this.checkBoxPages().find(p => p.index === pageId);
     this.checkBoxPages.set([existingPage ?? this.createCheckboxPage(pageId)]);
 
@@ -215,12 +242,6 @@ export class Checkboxes implements OnInit, AfterViewInit {
 
     // Force layout recalculation
     this.onScroll();
-  }
-
-  protected whenPageInputKeyDown = (event: KeyboardEvent): void => {
-    if (event.key === 'Enter') {
-      this.whenSearchButtonClick();
-    }
   }
 
   private async parseStringToBigInt(input: string): Promise<bigint> {
