@@ -3,7 +3,7 @@ import { CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport } 
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CheckboxesHubService, CheckboxPages } from '../../../api/checkboxes-hub.service';
-import { getCheckboxPageId } from '../../../utils/checkbox-page-id';
+import { bigIntToHexString } from '../../../utils/checkbox-page-id';
 import { sortHex } from '../../../utils/hex-string-sorter';
 
 interface IndexItem {
@@ -84,31 +84,28 @@ export class Checkboxes implements OnInit, AfterViewInit {
     // Subscribe to view changes
     this.virtualFor.viewChange.subscribe(event => {
       const data = this.checkBoxPages();
-      if (data.length === 0) {
-        return;
-      }
+      if (data.length === 0) return;
 
-      const firstRenderedId = data[event.start].index;
-      const lastIndex = event.end >= data.length - 1 ? data.length - 1 : event.end;
-      const lastRenderedId = data[lastIndex].index;
+      const visibleCheckboxPagesRange = {
+        first: data[event.start].index,
+        last: data[Math.min(event.end, data.length - 1)].index
+      };
 
       // Stop subscribing to items not rendered.
       for (let i = this.subscribedPageIds.length - 1; i >= 0; i--) {
         const id = this.subscribedPageIds[i];
-        if (id < firstRenderedId || id > lastRenderedId) {
-          this.checkboxHubService.unsubscribeToCheckboxPage(getCheckboxPageId(id));
+        if (id < visibleCheckboxPagesRange.first || id > visibleCheckboxPagesRange.last) {
+          this.checkboxHubService.unsubscribeToCheckboxPage(bigIntToHexString(id));
           this.subscribedPageIds.splice(i, 1);
         }
       }
 
       // Start subscribing to new items.
-      for (let i = event.start; i <= lastIndex; i++) {
+      for (let i = event.start; i <= Math.min(event.end, data.length - 1); i++) {
         const id = data[i].index;
-        if (this.subscribedPageIds.includes(id)) {
-          continue;
-        }
+        if (this.subscribedPageIds.includes(id)) continue;
 
-        this.checkboxHubService.subscribeToCheckboxPage(getCheckboxPageId(id));
+        this.checkboxHubService.subscribeToCheckboxPage(bigIntToHexString(id));
         this.subscribedPageIds.push(id);
       }
     });

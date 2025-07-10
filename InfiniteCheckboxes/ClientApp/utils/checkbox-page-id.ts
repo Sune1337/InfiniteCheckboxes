@@ -1,4 +1,4 @@
-export function getCheckboxPageId(id: bigint): string {
+export function bigIntToHexString(id: bigint): string {
   if (id < 0) {
     throw new Error("Input must be a positive number");
   }
