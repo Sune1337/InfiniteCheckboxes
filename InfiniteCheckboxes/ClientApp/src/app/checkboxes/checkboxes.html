@@ -6,13 +6,16 @@
         <option value="{{width}}">{{ width }}</option>
       }
     </select>
+
+    Go to page:
+    <input [(ngModel)]="pageInput" type="text" (keydown)="whenPageInputKeyDown($event)"><button (click)="whenSearchButtonClick()">Go</button>
   </header>
 
   <cdk-virtual-scroll-viewport [itemSize]="itemSize()" class="scroll-container" (scrolledIndexChange)="onScroll()">
     <div *cdkVirtualFor="let item of checkBoxPages()" class="scroll-item width-{{selectedPageWidth()}}">
       <div class="checkbox-grid" [style.grid-template-columns]="gridColumns()">
         @for (isChecked of item.state(); track $index) {
-          <input type="checkbox" name="{{item.index + '-' + $index}}" [checked]="isChecked" (change)="whenCheckboxChanged(item.index, $index, $event)">
+          <input type="checkbox" [checked]="isChecked" (change)="whenCheckboxChanged(item.index, $index, $event)">
         }
       </div>
     </div>

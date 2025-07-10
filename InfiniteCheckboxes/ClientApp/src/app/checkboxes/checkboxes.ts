@@ -28,6 +28,7 @@ export class Checkboxes implements OnInit, AfterViewInit {
   protected pageWidths = [32, 64, 128];
   protected selectedPageWidth = signal<number>(this.pageWidths[0]);
   protected checkBoxPages = signal<IndexItem[]>([]);
+  protected pageInput = signal<string>('');
 
   // Generate grid-template-columns value.
   protected gridColumns = computed(() => `repeat(${this.selectedPageWidth()}, 24px)`);
@@ -60,7 +61,7 @@ export class Checkboxes implements OnInit, AfterViewInit {
   }
 
   ngOnInit() {
-    this.initializeItems();
+    this.checkBoxPages.set([this.createCheckboxPage(this.defaultPageId)]);
   }
 
   ngAfterViewInit() {
@@ -91,10 +92,6 @@ export class Checkboxes implements OnInit, AfterViewInit {
         this.subscribedPageIds.push(id);
       }
     });
-  }
-
-  private initializeItems() {
-    this.checkBoxPages.set([this.createCheckboxPage(this.defaultPageId)]);
   }
 
   private createCheckboxPage(index: bigint): IndexItem {
@@ -202,4 +199,48 @@ export class Checkboxes implements OnInit, AfterViewInit {
     const isChecked = checkboxElement.checked;
     this.checkboxHubService.setChecked(id.toString(16), index, isChecked);
   }
+
+  protected whenSearchButtonClick = async (): Promise<void> => {
+    const pageInputText = this.pageInput();
+    if (pageInputText === '') {
+      return;
+    }
+
+    const pageId = await this.parseStringToBigInt(pageInputText);
+    const existingPage = this.checkBoxPages().find(p => p.index === pageId);
+    this.checkBoxPages.set([existingPage ?? this.createCheckboxPage(pageId)]);
+
+    // Reset the scroll position to top
+    this.viewport.scrollToIndex(0);
+
+    // Force layout recalculation
+    this.onScroll();
+  }
+
+  protected whenPageInputKeyDown = (event: KeyboardEvent): void => {
+    if (event.key === 'Enter') {
+      this.whenSearchButtonClick();
+    }
+  }
+
+  private async parseStringToBigInt(input: string): Promise<bigint> {
+    // Check if string contains only digits
+    if (/^\d+$/.test(input)) {
+      return BigInt(input);
+    }
+
+    // Check if it's a hex number starting with 0x
+    if (/^0x[0-9a-fA-F]+$/.test(input)) {
+      return BigInt(input);
+    }
+
+    // Otherwise, calculate SHA256 hash and convert to BigInt
+    const encoder = new TextEncoder();
+    const data = encoder.encode(input);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return BigInt('0x' + hashHex);
+  }
+
 }
