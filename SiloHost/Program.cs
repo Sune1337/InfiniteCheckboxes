@@ -3,26 +3,25 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using Orleans.Configuration;
+using Orleans.Providers.MongoDB.Configuration;
 
 using RedisMessages;
 using RedisMessages.Options;
 
 using SiloHost.Utils;
 
-using StackExchange.Redis;
-
 var builder = Host.CreateDefaultBuilder(args)
     .ConfigureServices((hostBuilderContext, serviceCollection) =>
     {
-        serviceCollection.Configure<RedisMessagePublisherOptions>(o => o.RedisConnectionString = hostBuilderContext.Configuration.GetConnectionString("ClusterRedis"));
+        serviceCollection.Configure<RedisMessagePublisherOptions>(o => o.RedisConnectionString = hostBuilderContext.Configuration.GetConnectionString("PubSubRedis"));
         serviceCollection.AddRedisMessagePublisher();
     })
     .UseOrleans((hostBuilderContext, siloBuilder) =>
     {
-        var clusterRedisConnectionString = hostBuilderContext.Configuration.GetConnectionString("ClusterRedis");
-        if (string.IsNullOrWhiteSpace(clusterRedisConnectionString))
+        var clusterMongoDbConnectionString = hostBuilderContext.Configuration.GetConnectionString("ClusterMongoDb");
+        if (string.IsNullOrWhiteSpace(clusterMongoDbConnectionString))
         {
-            throw new Exception("ClusterRedis connection-string is not set.");
+            throw new Exception("ClusterMongoDb connection-string is not set.");
         }
 
         siloBuilder
@@ -32,21 +31,17 @@ var builder = Host.CreateDefaultBuilder(args)
                     options.ServiceId = "CheckboxService";
                 }
             )
-            .Configure<GrainCollectionOptions>(options =>
+            .Configure<GrainCollectionOptions>(options => { options.CollectionAge = TimeSpan.FromMinutes(5); })
+            .UseMongoDBClient(clusterMongoDbConnectionString)
+            .UseMongoDBClustering(options =>
             {
-                options.CollectionAge = TimeSpan.FromMinutes(5);
+                options.DatabaseName = "OrleansCluster";
+                options.Strategy = MongoDBMembershipStrategy.SingleDocument;
             })
-            .UseRedisClustering(options =>
+            .AddMongoDBGrainStorage("CheckboxStore", options =>
             {
-                options.ConfigurationOptions = ConfigurationOptions.Parse(clusterRedisConnectionString);
-                options.ConfigurationOptions.DefaultDatabase = 0;
-                options.CreateMultiplexer = clusteringOptions => Task.FromResult<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(clusteringOptions.ConfigurationOptions));
-            })
-            .AddRedisGrainStorage("CheckboxStore", options =>
-            {
-                options.ConfigurationOptions = ConfigurationOptions.Parse(clusterRedisConnectionString);
-                options.ConfigurationOptions.DefaultDatabase = 1;
-                options.CreateMultiplexer = clusteringOptions => Task.FromResult<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(clusteringOptions.ConfigurationOptions));
+                options.DatabaseName = "OrleansGrains";
+                options.CreateShardKeyForCosmos = false;
             })
             .ConfigureEndpoints(TcpPorts.GetNextFreeTcpPort(11111), TcpPorts.GetNextFreeTcpPort(30000))
             .UseDashboard(options => { });

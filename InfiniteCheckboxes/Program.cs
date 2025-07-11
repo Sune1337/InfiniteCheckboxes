@@ -4,13 +4,12 @@ using CheckboxHubv1.Options;
 using InfiniteCheckboxes.Utils;
 
 using Orleans.Configuration;
-
-using StackExchange.Redis;
+using Orleans.Providers.MongoDB.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure options.
-builder.Services.Configure<CheckboxObserverOptions>(o => o.RedisConnectionString = builder.Configuration.GetConnectionString("ClusterRedis"));
+builder.Services.Configure<CheckboxObserverOptions>(o => o.RedisConnectionString = builder.Configuration.GetConnectionString("PubSubRedis"));
 
 // ADd services.
 builder.Services.AddSignalR();
@@ -20,10 +19,10 @@ builder.Services.AddCheckboxObserverService();
 
 builder.UseOrleansClient(clientBuilder =>
 {
-    var clusterRedisConnectionString = builder.Configuration.GetConnectionString("ClusterRedis");
-    if (string.IsNullOrWhiteSpace(clusterRedisConnectionString))
+    var clusterMongoDbConnectionString = clientBuilder.Configuration.GetConnectionString("ClusterMongoDb");
+    if (string.IsNullOrWhiteSpace(clusterMongoDbConnectionString))
     {
-        throw new Exception("ClusterRedis connection-string is not set.");
+        throw new Exception("ClusterMongoDb connection-string is not set.");
     }
 
     clientBuilder
@@ -33,11 +32,11 @@ builder.UseOrleansClient(clientBuilder =>
                 options.ServiceId = "CheckboxService";
             }
         )
-        .UseRedisClustering(options =>
+        .UseMongoDBClient(clusterMongoDbConnectionString)
+        .UseMongoDBClustering(options =>
         {
-            options.ConfigurationOptions = ConfigurationOptions.Parse(clusterRedisConnectionString);
-            options.ConfigurationOptions.DefaultDatabase = 0;
-            options.CreateMultiplexer = clusteringOptions => Task.FromResult<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(clusteringOptions.ConfigurationOptions));
+            options.DatabaseName = "OrleansCluster";
+            options.Strategy = MongoDBMembershipStrategy.SingleDocument;
         });
 });
 

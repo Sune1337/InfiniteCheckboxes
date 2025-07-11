@@ -19,7 +19,7 @@
 
     <ItemGroup>
       <PackageReference Include="Microsoft.Orleans.Client" Version="9.2.0-preview3" />
-      <PackageReference Include="Microsoft.Orleans.Clustering.Redis" Version="9.2.0-preview3" />
+      <PackageReference Include="Orleans.Providers.MongoDB" Version="9.1.0" />
     </ItemGroup>
 
     <ItemGroup>
