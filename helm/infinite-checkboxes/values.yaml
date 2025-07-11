@@ -1,0 +1,77 @@
+images:
+  pubsub_redis:
+    replicaCount: 1
+    repository: redis
+    tag: 8
+    pullPolicy: IfNotPresent
+  
+  cluster_mongodb:
+    replicaCount: 1
+    repository: mongo
+    tag: 8
+    pullPolicy: IfNotPresent
+    persistence:
+      enabled: false
+      claimName: ""
+
+  silohost:
+    replicaCount: 3
+    repository: silohost
+    tag: 1.0.2
+    pullPolicy: IfNotPresent
+
+  webapp:
+    replicaCount: 1
+    repository: webapp
+    tag: 1.0.2
+    pullPolicy: IfNotPresent
+
+imageCredentials:
+  registry: registry.example.com
+  username: ""
+  password: ""
+  email: ""
+
+imagePullSecrets:
+  - name: infinite-checkboxes-registry-secret
+
+persistentVolumeClaims: 
+#  cluster-mongodb:
+#    enabled: true
+#    size: 10Gi
+#    storageClass: standard
+#    accessModes: 
+#      - ReadWriteOnce
+#    annotations:
+#      "helm.sh/resource-policy": keep
+
+
+# This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+#    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+#    traefik.ingress.kubernetes.io/router.tls: "true"
+#    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+#    - secretName: webapp-cert
+#      hosts:
+#        - example.com

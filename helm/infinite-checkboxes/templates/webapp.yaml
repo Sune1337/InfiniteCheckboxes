@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "infinite-checkboxes.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.images.webapp.replicaCount }}
+  selector:
+    matchLabels:
+      app: webapp
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "infinite-checkboxes.serviceAccountName" . }}
+      containers:
+        - name: webapp
+          image: "{{ .Values.images.webapp.repository }}:{{ .Values.images.webapp.tag }}"
+          imagePullPolicy: {{ .Values.images.webapp.pullPolicy }}
+          env:
+            - name: ConnectionStrings__PubSubRedis
+              value: "pubsub-redis:6379"
+            - name: ConnectionStrings__ClusterMongoDb
+              value: "mongodb://cluster-mongodb"

@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: silohost
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "infinite-checkboxes.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.images.silohost.replicaCount }}
+  selector:
+    matchLabels:
+      app: silohost
+  template:
+    metadata:
+      labels:
+        app: silohost
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "infinite-checkboxes.serviceAccountName" . }}
+      containers:
+        - name: silohost
+          image: "{{ .Values.images.silohost.repository }}:{{ .Values.images.silohost.tag }}"
+          imagePullPolicy: {{ .Values.images.silohost.pullPolicy }}
+          env:
+            - name: ConnectionStrings__PubSubRedis
+              value: "pubsub-redis:6379"
+            - name: ConnectionStrings__ClusterMongoDb
+              value: "mongodb://cluster-mongodb"

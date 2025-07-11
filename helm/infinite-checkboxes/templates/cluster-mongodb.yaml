@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cluster-mongodb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "infinite-checkboxes.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.images.cluster_mongodb.replicaCount }}
+  selector:
+    matchLabels:
+      app: cluster-mongodb
+  template:
+    metadata:
+      labels:
+        app: cluster-mongodb
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "infinite-checkboxes.serviceAccountName" . }}
+      volumes:
+      {{- if .Values.images.cluster_mongodb.persistence.enabled }}
+        - name: mongodb-data
+          persistentVolumeClaim:
+            claimName: {{ .Values.images.cluster_mongodb.persistence.claimName }}
+      {{- end }}
+
+      containers:
+        - name: cluster-mongodb
+          image: "{{ .Values.images.cluster_mongodb.repository }}:{{ .Values.images.cluster_mongodb.tag }}"
+          imagePullPolicy: {{ .Values.images.cluster_mongodb.pullPolicy }}
+          {{- if .Values.images.cluster_mongodb.persistence.enabled }}
+          volumeMounts:
+            - name: mongodb-data
+              mountPath: "/data/db"
+          {{- end }}

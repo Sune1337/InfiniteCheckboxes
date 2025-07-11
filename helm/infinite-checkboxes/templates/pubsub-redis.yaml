@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pubsub-redis
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "infinite-checkboxes.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.images.pubsub_redis.replicaCount }}
+  selector:
+    matchLabels:
+      app: pubsub-redis
+  template:
+    metadata:
+      labels:
+        app: pubsub-redis
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "infinite-checkboxes.serviceAccountName" . }}
+      containers:
+        - name: pubsub-redis
+          image: "{{ .Values.images.pubsub_redis.repository }}:{{ .Values.images.pubsub_redis.tag }}"
+          imagePullPolicy: {{ .Values.images.pubsub_redis.pullPolicy }}
