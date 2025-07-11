@@ -16,6 +16,7 @@ builder.Services.AddSignalR();
 builder.Services.AddControllers();
 builder.Services.AddDefaultExceptionHandler();
 builder.Services.AddCheckboxObserverService();
+builder.Services.AddHsts(options => { options.MaxAge = TimeSpan.FromDays(365); });
 
 builder.UseOrleansClient(clientBuilder =>
 {
@@ -45,7 +46,7 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    builder.Services.AddHsts(options => { options.MaxAge = TimeSpan.FromDays(365); });
+    app.UseHsts();
 }
 
 // Use exception handler.
