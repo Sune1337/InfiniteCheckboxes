@@ -47,6 +47,7 @@ export class Checkboxes implements OnInit, AfterViewInit {
   private rowHeight = 24;
   private subscribedPageIds: bigint[] = [];
   private lastWidth = this.selectedPageWidth();
+  private currentPageParam = '';
 
   private checkboxHubService = inject(CheckboxesHubService);
   private activatedRoute = inject(ActivatedRoute);
@@ -64,14 +65,7 @@ export class Checkboxes implements OnInit, AfterViewInit {
     this.activatedRoute.paramMap.subscribe(params => {
       const id = params.get('id');
       if (id) {
-        // For some reason initial scrolling on page-reload does not work unless we do the initial navigation in setTimeout here.
-        // It causes scrolling to work when using a page-id that needs to be hashed; and not to work when using a number or hex-string.
-        this.checkBoxPages.set([]);
-
-        setTimeout(() => {
-          this.pageInput.set(id);
-          this.goToPage(id);
-        });
+        this.navigateToPage(id);
       } else {
         this.router.navigate(['', 'Welcome!'], { replaceUrl: true });
       }
@@ -220,7 +214,11 @@ export class Checkboxes implements OnInit, AfterViewInit {
       return;
     }
 
-    this.router.navigate(['', pageInputText]);
+    if (this.currentPageParam == pageInputText) {
+      this.navigateToPage(pageInputText);
+    } else {
+      this.router.navigate(['', pageInputText]);
+    }
   }
 
   protected whenPageInputKeyDown = (event: KeyboardEvent): void => {
@@ -233,7 +231,24 @@ export class Checkboxes implements OnInit, AfterViewInit {
       return;
     }
 
-    this.router.navigate(['', pageInputText]);
+    if (this.currentPageParam == pageInputText) {
+      this.navigateToPage(pageInputText);
+    } else {
+      this.router.navigate(['', pageInputText]);
+    }
+  }
+
+  private navigateToPage = (id: string): void => {
+    this.currentPageParam = id;
+
+    // For some reason initial scrolling on page-reload does not work unless we do the initial navigation in setTimeout here.
+    // It causes scrolling to work when using a page-id that needs to be hashed; and not to work when using a number or hex-string.
+    this.checkBoxPages.set([]);
+
+    setTimeout(() => {
+      this.pageInput.set(id);
+      this.goToPage(id);
+    });
   }
 
   private goToPage = async (id: string): Promise<void> => {
