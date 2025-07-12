@@ -57,6 +57,7 @@ export class CheckboxesHubService {
 
         const innerSubscription = this.hubConnectionObservable
           .subscribe(async hubConnection => {
+            const base64Id = bigIntToBase64(id);
             let items: boolean[] = [];
 
             // Listen for updated data.
@@ -74,7 +75,7 @@ export class CheckboxesHubService {
             });
 
             // Subscribe to items and process initial data.
-            const base64Data = await hubConnection.invoke(`${methodName}Subscribe`, bigIntToBase64(id));
+            const base64Data = await hubConnection.invoke(`${methodName}Subscribe`, base64Id);
             if (base64Data === null) {
               items = Array(4096);
             } else {
@@ -85,7 +86,7 @@ export class CheckboxesHubService {
 
             // Unsubscribe to data when subscriber leaves.
             unsubscribeData = async () => {
-              await hubConnection.invoke(`${methodName}Unsubscribe`, id);
+              await hubConnection.invoke(`${methodName}Unsubscribe`, base64Id);
             }
           });
 
