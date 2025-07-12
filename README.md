@@ -81,6 +81,7 @@ kubectl cluster-info
 
 ## Install an ingress-controller
 This example uses Traefik.
+Instructions from: https://docs.vultr.com/how-to-install-traefik-ingress-controller-with-cert-manager-on-kubernetes
 
 ```shell
 kubectl create namespace traefik-namespace
@@ -94,6 +95,45 @@ kubectl get services -n traefik-namespace
 #NAME      TYPE           CLUSTER-IP     EXTERNAL-IP   PORT(S)                      AGE
 #traefik   LoadBalancer   10.96.43.157   <WAIT FOR IT> 80:31890/TCP,443:32587/TCP   116s
 ```
+
+# Use letsencrypt to issue certs.
+First install cert-manager.
+```shell
+# Install cert-manager
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.17.2/cert-manager.yaml
+
+# Verify that all cert-manager components are installed and running.
+kubectl get pods --namespace cert-manager
+```
+
+Create a new file named cluster-issuer.yaml. Replace email with a proper email.
+```yaml
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    email: hello@example.com
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-prod-key
+    solvers:
+      - http01:
+          ingress:
+            class: traefik
+```
+
+Apply the cluster-issuer and check status.
+```shell
+kubectl apply -f cluster-issuer.yaml
+kubectl get clusterissuer
+
+#NAME               READY   AGE
+#letsencrypt-prod   True    2s
+```
+
+
 
 ## Deploy to a kubernetes cluster
 This is done by installing a helm chart.
