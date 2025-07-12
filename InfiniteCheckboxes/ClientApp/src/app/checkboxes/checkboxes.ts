@@ -238,6 +238,12 @@ export class Checkboxes implements OnInit, AfterViewInit {
     }
   }
 
+  protected whenDialogClick = (event: MouseEvent, helpDialog: HTMLDialogElement): void => {
+    if (event.target === helpDialog) {
+      helpDialog.close();
+    }
+  }
+
   private navigateToPage = (id: string): void => {
     this.currentPageParam = id;
 
@@ -282,5 +288,4 @@ export class Checkboxes implements OnInit, AfterViewInit {
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     return BigInt('0x' + hashHex);
   }
-
 }
