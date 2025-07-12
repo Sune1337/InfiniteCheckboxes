@@ -19,4 +19,8 @@
       </None>
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\Two56BitId\Two56BitId.csproj" />
+    </ItemGroup>
+
 </Project>
