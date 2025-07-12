@@ -37,11 +37,11 @@ public partial class CheckboxHub : Hub
 
     #region Public Methods and Operators
 
-    public async Task<byte[]?> CheckboxesSubscribe(string id)
+    public async Task<byte[]?> CheckboxesSubscribe(string base64Id)
     {
-        if (Two56BitIdParser.TryParse256BitId(id, out var parsedId) == false)
+        if (base64Id.TryParse256BitBase64Id(out var parsedId) == false)
         {
-            throw new ArgumentException("Invalid checkbox page id.", nameof(id));
+            throw new ArgumentException("Invalid checkbox page id.", nameof(base64Id));
         }
 
         await Groups.AddToGroupAsync(Context.ConnectionId, $"{HubGroups.CheckboxGroupPrefix}_{parsedId}");
@@ -51,15 +51,15 @@ public partial class CheckboxHub : Hub
         ComboboxIds?.Add(parsedId);
 
         // Get the initial state of checkboxes.
-        var checkboxGrain = _grainFactory.GetGrain<ICheckboxGrain>(id);
+        var checkboxGrain = _grainFactory.GetGrain<ICheckboxGrain>(parsedId);
         return await checkboxGrain.GetCheckboxes();
     }
 
-    public async Task CheckboxesUnsubscribe(string id)
+    public async Task CheckboxesUnsubscribe(string base64Id)
     {
-        if (Two56BitIdParser.TryParse256BitId(id, out var parsedId) == false)
+        if (base64Id.TryParse256BitBase64Id(out var parsedId) == false)
         {
-            throw new ArgumentException("Invalid checkbox page id.", nameof(id));
+            throw new ArgumentException("Invalid checkbox page id.", nameof(base64Id));
         }
 
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"{HubGroups.CheckboxGroupPrefix}_{parsedId}");
@@ -98,11 +98,11 @@ public partial class CheckboxHub : Hub
         }
     }
 
-    public async Task SetCheckbox(string id, int index, byte value)
+    public async Task SetCheckbox(string base64Id, int index, byte value)
     {
-        if (Two56BitIdParser.TryParse256BitId(id, out var parsedId) == false)
+        if (base64Id.TryParse256BitBase64Id(out var parsedId) == false)
         {
-            throw new ArgumentException("Invalid checkbox page id.", nameof(id));
+            throw new ArgumentException("Invalid checkbox page id.", nameof(base64Id));
         }
 
         // Set state of checkbox.

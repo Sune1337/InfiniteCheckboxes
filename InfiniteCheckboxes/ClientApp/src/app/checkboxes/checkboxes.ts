@@ -3,12 +3,10 @@ import { CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport } 
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CheckboxesHubService, CheckboxPages } from '../../../api/checkboxes-hub.service';
-import { bigIntToHexString } from '../../../utils/checkbox-page-id';
 import { sortHex } from '../../../utils/hex-string-sorter';
 
 interface IndexItem {
   index: bigint;
-  displayValue: string;
   state: WritableSignal<boolean[]>;
 }
 
@@ -95,7 +93,7 @@ export class Checkboxes implements OnInit, AfterViewInit {
       for (let i = this.subscribedPageIds.length - 1; i >= 0; i--) {
         const id = this.subscribedPageIds[i];
         if (id < visibleCheckboxPagesRange.first || id > visibleCheckboxPagesRange.last) {
-          this.checkboxHubService.unsubscribeToCheckboxPage(bigIntToHexString(id));
+          this.checkboxHubService.unsubscribeToCheckboxPage(id);
           this.subscribedPageIds.splice(i, 1);
         }
       }
@@ -105,7 +103,7 @@ export class Checkboxes implements OnInit, AfterViewInit {
         const id = data[i].index;
         if (this.subscribedPageIds.includes(id)) continue;
 
-        this.checkboxHubService.subscribeToCheckboxPage(bigIntToHexString(id));
+        this.checkboxHubService.subscribeToCheckboxPage(id);
         this.subscribedPageIds.push(id);
       }
     });
@@ -114,7 +112,6 @@ export class Checkboxes implements OnInit, AfterViewInit {
   private createCheckboxPage(index: bigint): IndexItem {
     return {
       index,
-      displayValue: '0x' + index.toString(16).padStart(64, '0'),
       state: signal(Array(4096))
     };
   }
@@ -214,7 +211,7 @@ export class Checkboxes implements OnInit, AfterViewInit {
   protected whenCheckboxChanged = (id: bigint, index: number, event: Event): void => {
     const checkboxElement = event.target as HTMLInputElement;
     const isChecked = checkboxElement.checked;
-    this.checkboxHubService.setChecked(id.toString(16), index, isChecked);
+    this.checkboxHubService.setChecked(id, index, isChecked);
   }
 
   protected whenSearchButtonClick = async (): Promise<void> => {

@@ -3,6 +3,7 @@ import { first, Observable, shareReplay, Subject, Subscription, timer } from "rx
 import { HubConnection, HubConnectionBuilder, RetryContext } from "@microsoft/signalr";
 import { HubStatus, HubStatusService } from './hub-status.service';
 import { base64ToUint8Array, decompressBitArray } from '../utils/decompress';
+import { base64ToBigInt, bigIntToBase64, bigIntToHexString } from '../utils/bigint-utils';
 
 export type CheckboxPages = { [id: string]: boolean[] };
 type CheckboxPageSubscriptions = { [id: string]: Subscription };
@@ -27,27 +28,29 @@ export class CheckboxesHubService {
     this.checkboxPages = new Subject<CheckboxPages>();
   }
 
-  public subscribeToCheckboxPage = (id: string): void => {
-    if (this.checkBoxPageSubscriptions[id] === undefined) {
-      this.checkBoxPageSubscriptions[id] = this.createDataObservable('Checkboxes', id)
+  public subscribeToCheckboxPage = (id: bigint): void => {
+    const hexId = bigIntToHexString(id);
+    if (this.checkBoxPageSubscriptions[hexId] === undefined) {
+      this.checkBoxPageSubscriptions[hexId] = this.createDataObservable('Checkboxes', id)
         .subscribe(items => {
-          this.privateCheckboxPages[id] = items;
+          this.privateCheckboxPages[hexId] = items;
           this.checkboxPages.next(this.privateCheckboxPages);
         });
     }
   }
 
-  public unsubscribeToCheckboxPage = (id: string): void => {
-    if (this.checkBoxPageSubscriptions[id] === undefined) {
+  public unsubscribeToCheckboxPage = (id: bigint): void => {
+    const hexId = bigIntToHexString(id);
+    if (this.checkBoxPageSubscriptions[hexId] === undefined) {
       return;
     }
 
-    this.checkBoxPageSubscriptions[id].unsubscribe();
-    delete this.checkBoxPageSubscriptions[id];
-    delete this.privateCheckboxPages[id];
+    this.checkBoxPageSubscriptions[hexId].unsubscribe();
+    delete this.checkBoxPageSubscriptions[hexId];
+    delete this.privateCheckboxPages[hexId];
   }
 
-  private createDataObservable = (methodName: string, id: string): Observable<boolean[]> => {
+  private createDataObservable = (methodName: string, id: bigint): Observable<boolean[]> => {
     return new Observable<boolean[]>(
       subscriber => {
         let unsubscribeData: () => Promise<void>;
@@ -57,7 +60,8 @@ export class CheckboxesHubService {
             let items: boolean[] = [];
 
             // Listen for updated data.
-            hubConnection.on(`${methodName}Update`, (pageId: string, values: number[][]) => {
+            hubConnection.on(`${methodName}Update`, (base64PageId: string, values: number[][]) => {
+              const pageId = base64ToBigInt(base64PageId);
               if (pageId !== id) {
                 return;
               }
@@ -70,7 +74,7 @@ export class CheckboxesHubService {
             });
 
             // Subscribe to items and process initial data.
-            const base64Data = await hubConnection.invoke(`${methodName}Subscribe`, id);
+            const base64Data = await hubConnection.invoke(`${methodName}Subscribe`, bigIntToBase64(id));
             if (base64Data === null) {
               items = Array(4096);
             } else {
@@ -182,12 +186,12 @@ export class CheckboxesHubService {
       .pipe(shareReplay({ bufferSize: 1, refCount: () => timer(1000) }));
   }
 
-  setChecked(id: string, index: number, isChecked: boolean) {
+  setChecked(id: bigint, index: number, isChecked: boolean) {
     const innerSubscription = this.hubConnectionObservable
       .pipe(first())
       .subscribe(async hubConnection => {
         // Subscribe to items and process initial data.
-        const result = await hubConnection.invoke(`SetCheckbox`, id, index, isChecked ? 1 : 0);
+        await hubConnection.invoke(`SetCheckbox`, bigIntToBase64(id), index, isChecked ? 1 : 0);
       });
   }
 }

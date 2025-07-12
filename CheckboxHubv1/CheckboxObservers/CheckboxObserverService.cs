@@ -15,6 +15,8 @@ using RedisMessages.Messages;
 
 using StackExchange.Redis;
 
+using Two56bitId;
+
 public class CheckboxPageUpdates(ILogger<DebounceValues> debounceLogger)
 {
     #region Fields
@@ -98,9 +100,10 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
                 var checkboxPageUpdates = new CheckboxPageUpdates(_debounceLogger);
                 checkboxPageUpdates.DebounceValues.EmitValuesDelegate += async values =>
                 {
+                    var base64Id = Convert.ToBase64String(id.HexStringToByteArray());
                     await _checkboxHubContext.Clients
                         .Group($"{HubGroups.CheckboxGroupPrefix}_{id}")
-                        .SendAsync("CheckboxesUpdate", id, values.Select(v => (int[]) [v.Key, v.Value]));
+                        .SendAsync("CheckboxesUpdate", base64Id, values.Select(v => (int[]) [v.Key, v.Value]));
                 };
                 _subscriptions.Add(id, checkboxPageUpdates);
                 startSubscribe = true;
