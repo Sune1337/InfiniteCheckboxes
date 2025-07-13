@@ -2,65 +2,59 @@ import { inject, Injectable } from '@angular/core';
 import { first, Observable, shareReplay, Subject, Subscription, timer } from "rxjs";
 import { HubConnection, HubConnectionBuilder, RetryContext } from "@microsoft/signalr";
 import { HubStatus, HubStatusService } from './hub-status.service';
-import { base64ToUint8Array, decompressBitArray } from '../utils/decompress';
-import { base64ToBigInt, bigIntToBase64, bigIntToHexString } from '../utils/bigint-utils';
+import { War } from './models/war';
 
-export type CheckboxPages = { [id: string]: boolean[] };
-type CheckboxPageSubscriptions = { [id: string]: Subscription };
+export type Wars = { [id: number]: War };
+type WarSubscriptions = { [id: number]: Subscription };
 
 @Injectable({
   providedIn: 'root'
 })
-export class CheckboxesHubService {
+export class WarHubService {
 
-  public checkboxPages: Subject<CheckboxPages>;
+  public wars: Subject<Wars>;
 
   private hubStatusService = inject(HubStatusService);
   private hubConnectionObservable: Observable<HubConnection>;
-  private checkBoxPageSubscriptions: CheckboxPageSubscriptions = {};
-  private privateCheckboxPages: CheckboxPages = {};
+  private warSubscriptions: WarSubscriptions = {};
+  private privateWars: Wars = {};
 
   constructor() {
     // Create observable to trigger connecting to hub.
     this.hubConnectionObservable = this.createHubConnectionObservable();
 
     // Create machineSimulations observable.
-    this.checkboxPages = new Subject<CheckboxPages>();
+    this.wars = new Subject<Wars>();
   }
 
-  public subscribeToCheckboxPage = (id: bigint): void => {
-    const hexId = bigIntToHexString(id);
-    if (this.checkBoxPageSubscriptions[hexId] === undefined) {
-      this.checkBoxPageSubscriptions[hexId] = this.createDataObservable('Checkboxes', id)
-        .subscribe(items => {
-          this.privateCheckboxPages[hexId] = items;
-          this.checkboxPages.next(this.privateCheckboxPages);
+  public subscribeToWar = (id: number): void => {
+    if (this.warSubscriptions[id] === undefined) {
+      this.warSubscriptions[id] = this.createDataObservable('Wars', id)
+        .subscribe(war => {
+          this.privateWars[id] = war;
+          this.wars.next(this.privateWars);
         });
     }
   }
 
-  public unsubscribeToCheckboxPage = (id: bigint): void => {
-    const hexId = bigIntToHexString(id);
-    if (this.checkBoxPageSubscriptions[hexId] === undefined) {
+  public unsubscribeToWar = (id: number): void => {
+    if (this.warSubscriptions[id] === undefined) {
       return;
     }
 
-    this.checkBoxPageSubscriptions[hexId].unsubscribe();
-    delete this.checkBoxPageSubscriptions[hexId];
-    delete this.privateCheckboxPages[hexId];
+    this.warSubscriptions[id].unsubscribe();
+    delete this.warSubscriptions[id];
+    delete this.privateWars[id];
   }
 
-  public setChecked = (id: bigint, index: number, isChecked: boolean): Promise<void> => {
-    return new Promise<void>(async (resolve, reject) => {
+  public getCurrentWar = (): Promise<number> => {
+    return new Promise<number>(async (resolve, reject) => {
       this.hubConnectionObservable
         .pipe(first())
         .subscribe(async hubConnection => {
           try {
-            const result = await hubConnection.invoke(`SetCheckbox`, bigIntToBase64(id), index, isChecked ? 1 : 0);
-            if (result) {
-              reject(new Error(result));
-            }
-            resolve();
+            const warGameId = await hubConnection.invoke<number>(`GetCurrentWarId`);
+            resolve(warGameId);
           } catch (error) {
             reject(error)
           }
@@ -68,43 +62,49 @@ export class CheckboxesHubService {
     });
   }
 
-  private createDataObservable = (methodName: string, id: bigint): Observable<boolean[]> => {
-    return new Observable<boolean[]>(
+  private static parseWar = (war: War): War => {
+    const warAsAny = war as any;
+
+    if (typeof (warAsAny.createdUtc) == 'string') {
+      war.createdUtc = new Date(warAsAny.createdUtc);
+    }
+
+    if (typeof (warAsAny.startUtc) == 'string') {
+      war.startUtc = new Date(warAsAny.startUtc);
+    }
+
+    if (typeof (warAsAny.endUtc) == 'string') {
+      war.endUtc = new Date(warAsAny.endUtc);
+    }
+
+    return war;
+  }
+
+  private createDataObservable = (methodName: string, id: number): Observable<War> => {
+    return new Observable<War>(
       subscriber => {
         let unsubscribeData: () => Promise<void>;
 
         const innerSubscription = this.hubConnectionObservable
           .subscribe(async hubConnection => {
-            const base64Id = bigIntToBase64(id);
-            let items: boolean[] = [];
+            let item: War;
 
             // Listen for updated data.
-            hubConnection.on(`${methodName}Update`, (base64PageId: string, values: number[][]) => {
-              const pageId = base64ToBigInt(base64PageId);
-              if (pageId !== id) {
+            hubConnection.on(`${methodName}Update`, (warId: number, war: War) => {
+              if (warId !== id) {
                 return;
               }
 
-              for (const value of values) {
-                items[value[0]] = value[1] != 0;
-              }
-
-              subscriber.next(items);
+              subscriber.next(WarHubService.parseWar(war));
             });
 
             // Subscribe to items and process initial data.
-            const base64Data = await hubConnection.invoke(`${methodName}Subscribe`, base64Id);
-            if (base64Data === null) {
-              items = Array(4096);
-            } else {
-              const compressedBytes = base64ToUint8Array(base64Data);
-              items = decompressBitArray(compressedBytes);
-            }
-            subscriber.next(items);
+            const war = await hubConnection.invoke<War>(`${methodName}Subscribe`, id);
+            subscriber.next(WarHubService.parseWar(war));
 
             // Unsubscribe to data when subscriber leaves.
             unsubscribeData = async () => {
-              await hubConnection.invoke(`${methodName}Unsubscribe`, base64Id);
+              await hubConnection.invoke(`${methodName}Unsubscribe`, id);
             }
           });
 
@@ -140,7 +140,7 @@ export class CheckboxesHubService {
 
         // Connect to hub.
         const hubConnection = new HubConnectionBuilder()
-          .withUrl('/hubs/v1/CheckboxHub')
+          .withUrl('/hubs/v1/WarHub')
           .withAutomaticReconnect({
             // Retry connecting to hub until the observable is unsubscribed.
             nextRetryDelayInMilliseconds(retryContext: RetryContext): number | null {

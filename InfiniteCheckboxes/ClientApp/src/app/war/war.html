@@ -1,0 +1,34 @@
+<div class="layout-container">
+  <header class="header">
+    @if (war(); as war) {
+      Checked: {{ war.numberOfChecked }} Unchecked {{ war.numberOfUnchecked }}
+      <a href="javascript:void(0)" (click)="helpDialog.showModal()"><span class="help-link">?</span></a>
+
+      @if (!war.startUtc) {
+        <p>A war is brewing! Make the first strike!</p>
+      } @else if (!war.endUtc) {
+        <p>The war is active! Good luck soldier.</p>
+      } @else {
+        <p>
+          The war ended at {{ war.endUtc | date:'y-MM-dd HH:mm' }}. {{ war.winningTeam == 0 ? 'Checkers' : 'Uncheckers' }} won!
+          <a href="javascript:void(0)" (click)="gotoCurrentWar()">Join the next war</a>
+        </p>
+      }
+    }
+
+    <dialog #helpDialog id="help-dialog" (click)="whenDialogClick($event, helpDialog)">
+      <div class="help-dialog-content">
+        <h3>This is WAR!</h3>
+        <p>
+          The goal is to check or uncheck all checkboxes. Just pick a side and start fighting.
+        </p>
+      </div>
+    </dialog>
+  </header>
+
+  <div class="checkbox-container">
+    @if (war(); as war) {
+      <app-checkbox-grid [gridWidth]="war.battlefieldWidth" [maxSize]="war.battlefieldWidth * war.battlefieldWidth"></app-checkbox-grid>
+    }
+  </div>
+</div>

@@ -1,49 +1,55 @@
-namespace CheckboxHubv1.Utils;
+namespace ValueDebouncer;
 
-public delegate Task EmitValuesDelegate(Dictionary<int, byte> values);
+using Microsoft.Extensions.Logging;
 
-public class DebounceValues
+public class DebounceValues<TKey, TValue> where TKey : notnull
 {
     #region Constants
 
-    private const int EmitDelay = 500;
+    private const int EmitDelay = 250;
 
     #endregion
 
     #region Fields
 
-    private readonly ILogger<DebounceValues> _logger;
+    private readonly ILogger _logger;
     private readonly CancellationTokenSource _stopTasksTokenSource = new();
     private readonly Lock _valuesLock = new();
     private Task? _emitValuesTask;
-    private Dictionary<int, byte> _values = [];
+    private Dictionary<TKey, TValue> _values = [];
 
     #endregion
 
     #region Constructors and Destructors
 
-    public DebounceValues(ILogger<DebounceValues> logger)
+    public DebounceValues(ILogger logger)
     {
         _logger = logger;
-        _emitValuesTask = EmitValues();
+        _emitValuesTask = EmitValuesTask();
     }
+
+    #endregion
+
+    #region Delegates
+
+    public delegate Task EmitValuesDelegate(Dictionary<TKey, TValue> values);
 
     #endregion
 
     #region Public Events
 
-    public event EmitValuesDelegate? EmitValuesDelegate;
+    public event EmitValuesDelegate? EmitValues;
 
     #endregion
 
     #region Public Methods and Operators
 
-    public void DebounceValue(int index, byte value)
+    public void DebounceValue(TKey index, TValue value)
     {
         lock (_valuesLock)
         {
             _values[index] = value;
-            _emitValuesTask ??= EmitValues();
+            _emitValuesTask ??= EmitValuesTask();
         }
     }
 
@@ -60,23 +66,23 @@ public class DebounceValues
 
     #region Methods
 
-    private async Task EmitValues()
+    private async Task EmitValuesTask()
     {
         try
         {
             await Task.Delay(EmitDelay, _stopTasksTokenSource.Token);
 
-            Dictionary<int, byte> localValues;
+            Dictionary<TKey, TValue> localValues;
             lock (_valuesLock)
             {
                 localValues = _values;
-                _values = new Dictionary<int, byte>();
+                _values = new Dictionary<TKey, TValue>();
                 _emitValuesTask = null;
             }
 
-            if (localValues.Count > 0 && EmitValuesDelegate != null)
+            if (localValues.Count > 0 && EmitValues != null)
             {
-                await EmitValuesDelegate.Invoke(localValues);
+                await EmitValues.Invoke(localValues);
             }
         }
 

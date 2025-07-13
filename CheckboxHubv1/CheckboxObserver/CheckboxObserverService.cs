@@ -1,11 +1,10 @@
-namespace CheckboxHubv1.CheckboxObservers;
+namespace CheckboxHubv1.CheckboxObserver;
 
 using System.Text.Json;
 using System.Threading.Channels;
 
 using CheckboxHubv1.Hubs;
 using CheckboxHubv1.Options;
-using CheckboxHubv1.Utils;
 
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
@@ -17,11 +16,13 @@ using StackExchange.Redis;
 
 using Two56bitId;
 
-public class CheckboxPageUpdates(ILogger<DebounceValues> debounceLogger)
+using ValueDebouncer;
+
+public class CheckboxPageUpdates(ILogger logger)
 {
     #region Fields
 
-    public readonly DebounceValues DebounceValues = new(debounceLogger);
+    public readonly DebounceValues<int, byte> DebounceValues = new(logger);
     public int Count = 1;
 
     #endregion
@@ -40,7 +41,7 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
 
     private readonly IHubContext<CheckboxHub> _checkboxHubContext;
     private readonly Channel<CheckboxUpdateMessage> _checkboxUpdateChannel = Channel.CreateUnbounded<CheckboxUpdateMessage>();
-    private readonly ILogger<DebounceValues> _debounceLogger;
+    private readonly ILogger _logger;
     private readonly CancellationTokenSource _readCheckboxUpdateMessagesTaskCancellationToken = new();
     private readonly string _redisConnectionString;
     private readonly Dictionary<string, CheckboxPageUpdates> _subscriptions = new();
@@ -51,7 +52,7 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
 
     #region Constructors and Destructors
 
-    public CheckboxObserverService(IOptions<CheckboxObserverOptions> options, IHubContext<CheckboxHub> checkboxHubContext, ILogger<DebounceValues> debounceLogger)
+    public CheckboxObserverService(IOptions<CheckboxObserverOptions> options, IHubContext<CheckboxHub> checkboxHubContext, ILogger<CheckboxObserverService> logger)
     {
         if (options.Value.RedisConnectionString == null)
         {
@@ -60,7 +61,7 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
 
         _redisConnectionString = options.Value.RedisConnectionString;
         _checkboxHubContext = checkboxHubContext;
-        _debounceLogger = debounceLogger;
+        _logger = logger;
     }
 
     #endregion
@@ -97,8 +98,8 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
         {
             if (_subscriptions.TryGetValue(id, out var subscription) == false)
             {
-                var checkboxPageUpdates = new CheckboxPageUpdates(_debounceLogger);
-                checkboxPageUpdates.DebounceValues.EmitValuesDelegate += async values =>
+                var checkboxPageUpdates = new CheckboxPageUpdates(_logger);
+                checkboxPageUpdates.DebounceValues.EmitValues += async values =>
                 {
                     var base64Id = Convert.ToBase64String(id.HexStringToByteArray());
                     await _checkboxHubContext.Clients
@@ -156,7 +157,7 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
             {
                 var checkboxUpdateMessage = await _checkboxUpdateChannel.Reader.ReadAsync(_readCheckboxUpdateMessagesTaskCancellationToken.Token);
 
-                DebounceValues? debounceValues;
+                DebounceValues<int, byte>? debounceValues;
                 lock (_subscriptionsLock)
                 {
                     debounceValues = _subscriptions.TryGetValue(checkboxUpdateMessage.Id, out var checkboxPageUpdates) ? checkboxPageUpdates.DebounceValues : null;

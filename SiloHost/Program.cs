@@ -14,7 +14,7 @@ var builder = Host.CreateDefaultBuilder(args)
     .ConfigureServices((hostBuilderContext, serviceCollection) =>
     {
         serviceCollection.Configure<RedisMessagePublisherOptions>(o => o.RedisConnectionString = hostBuilderContext.Configuration.GetConnectionString("PubSubRedis"));
-        serviceCollection.AddRedisMessagePublisher();
+        serviceCollection.AddRedisMessagePublishers();
     })
     .UseOrleans((hostBuilderContext, siloBuilder) =>
     {
@@ -40,7 +40,12 @@ var builder = Host.CreateDefaultBuilder(args)
             })
             .AddMongoDBGrainStorage("CheckboxStore", options =>
             {
-                options.DatabaseName = "OrleansGrains";
+                options.DatabaseName = "CheckboxGrains";
+                options.CreateShardKeyForCosmos = false;
+            })
+            .AddMongoDBGrainStorage("WarStore", options =>
+            {
+                options.DatabaseName = "WarGrains";
                 options.CreateShardKeyForCosmos = false;
             })
             .ConfigureEndpoints(TcpPorts.GetNextFreeTcpPort(11111), TcpPorts.GetNextFreeTcpPort(30000))

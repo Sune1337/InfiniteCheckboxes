@@ -16,15 +16,12 @@
 
     <ItemGroup>
       <ProjectReference Include="..\CheckboxHubv1\CheckboxHubv1.csproj" />
+      <ProjectReference Include="..\WarHubv1\WarHubv1.csproj" />
     </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="Microsoft.Orleans.Client" Version="9.2.0-preview3" />
       <PackageReference Include="Orleans.Providers.MongoDB" Version="9.1.0" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="ClientApp\api\models\" />
     </ItemGroup>
 
     <Target Name="PublishRunWebpack" AfterTargets="ComputeFilesToPublish">

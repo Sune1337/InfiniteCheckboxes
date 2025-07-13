@@ -1,4 +1,4 @@
-namespace CheckboxHubv1.CheckboxObservers;
+namespace CheckboxHubv1.CheckboxObserver;
 
 public interface ICheckboxObserverManager
 {

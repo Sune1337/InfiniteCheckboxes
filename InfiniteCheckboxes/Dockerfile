@@ -22,9 +22,11 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["InfiniteCheckboxes/", "InfiniteCheckboxes/"]
 COPY ["CheckboxHubv1/", "CheckboxHubv1/"]
+COPY ["WarHubv1/", "WarHubv1/"]
 COPY ["GrainInterfaces/", "GrainInterfaces/"]
 COPY ["RedisMessages/", "RedisMessages/"]
 COPY ["Two56BitId/", "Two56BitId/"]
+COPY ["ValueDebouncer/", "ValueDebouncer/"]
 RUN dotnet restore "InfiniteCheckboxes/InfiniteCheckboxes.csproj"
 WORKDIR "/src/InfiniteCheckboxes"
 RUN dotnet build "./InfiniteCheckboxes.csproj" -c $BUILD_CONFIGURATION -o /app/build

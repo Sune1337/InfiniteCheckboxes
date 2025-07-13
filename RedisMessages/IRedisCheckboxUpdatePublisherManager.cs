@@ -1,6 +1,6 @@
 namespace RedisMessages;
 
-public interface IRedisMessagePublisherManager
+public interface IRedisCheckboxUpdatePublisherManager
 {
     #region Public Methods and Operators
 

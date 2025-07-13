@@ -18,7 +18,7 @@ public class CheckboxGrain : Grain, ICheckboxGrain
     #region Fields
 
     private readonly IPersistentState<CheckboxState> _checkboxState;
-    private readonly IRedisMessagePublisherManager _redisMessagePublisherManager;
+    private readonly IRedisCheckboxUpdatePublisherManager _redisCheckboxUpdatePublisherManager;
 
     private bool[]? _decompressedData;
     private string? _grainId;
@@ -30,11 +30,11 @@ public class CheckboxGrain : Grain, ICheckboxGrain
     public CheckboxGrain(
         [PersistentState("CheckboxState", "CheckboxStore")]
         IPersistentState<CheckboxState> checkboxState,
-        IRedisMessagePublisherManager redisMessagePublisherManager
+        IRedisCheckboxUpdatePublisherManager redisCheckboxUpdatePublisherManager
     )
     {
         _checkboxState = checkboxState;
-        _redisMessagePublisherManager = redisMessagePublisherManager;
+        _redisCheckboxUpdatePublisherManager = redisCheckboxUpdatePublisherManager;
     }
 
     #endregion
@@ -52,27 +52,31 @@ public class CheckboxGrain : Grain, ICheckboxGrain
         return Task.CompletedTask;
     }
 
+    public async Task RegisterCallback<T>(GrainId grainId) where T : ICheckboxCallbackGrain
+    {
+        _checkboxState.State.CallbackGrain = grainId;
+        await _checkboxState.WriteStateAsync();
+    }
+
     public async Task SetCheckbox(int index, byte value)
     {
-        var normalValue = value != 0;
-        if (_checkboxState.State == null && !normalValue)
-        {
-            // There is no state, and user wants to set a value to 0.
-            // The default value is 0 so no need to update state.
-            return;
-        }
-
-        _checkboxState.State ??= new CheckboxState();
         _decompressedData ??= CompressedBitArray.Decompress(_checkboxState.State.Checkboxes) ?? new bool[CheckboxPageSize];
-
         if (index < 0 || index >= _decompressedData.Length)
         {
             throw new ArgumentOutOfRangeException(nameof(index));
         }
 
+        var normalValue = value != 0;
         if (_decompressedData[index] != normalValue)
         {
             // The checkbox state changed.
+            if (_checkboxState.State.CallbackGrain != null)
+            {
+                // Invoke callback.
+                var checkboxCallbackGrain = GrainFactory.GetGrain<ICheckboxCallbackGrain>(_checkboxState.State.CallbackGrain.Value);
+                await checkboxCallbackGrain.WhenCheckboxesUpdated(_decompressedData, index, normalValue);
+            }
+
             _decompressedData[index] = normalValue;
             _checkboxState.State.Checkboxes = CompressedBitArray.Compress(_decompressedData);
             await _checkboxState.WriteStateAsync();
@@ -80,8 +84,24 @@ public class CheckboxGrain : Grain, ICheckboxGrain
 
         if (_grainId != null)
         {
-            await _redisMessagePublisherManager.PublishCheckboxUpdateAsync(_grainId, index, normalValue);
+            await _redisCheckboxUpdatePublisherManager.PublishCheckboxUpdateAsync(_grainId, index, normalValue);
         }
+    }
+
+    public async Task SetCheckboxes(byte[] checkboxes)
+    {
+        _decompressedData ??= CompressedBitArray.Decompress(_checkboxState.State.Checkboxes) ?? new bool[CheckboxPageSize];
+
+        var numberOfBits = Math.Min(checkboxes.Length * 8, _decompressedData.Length);
+        for (var i = 0; i < numberOfBits; i++)
+        {
+            var byteIndex = i / 8;
+            var bitIndex = i % 8;
+            _decompressedData[i] = (checkboxes[byteIndex] & (1 << bitIndex)) != 0;
+        }
+
+        _checkboxState.State.Checkboxes = CompressedBitArray.Compress(_decompressedData);
+        await _checkboxState.WriteStateAsync();
     }
 
     #endregion

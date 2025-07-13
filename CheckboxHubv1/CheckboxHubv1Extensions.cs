@@ -1,6 +1,6 @@
 namespace CheckboxHubv1;
 
-using CheckboxHubv1.CheckboxObservers;
+using CheckboxHubv1.CheckboxObserver;
 using CheckboxHubv1.Hubs;
 
 public static class CheckboxHubv1Extensions

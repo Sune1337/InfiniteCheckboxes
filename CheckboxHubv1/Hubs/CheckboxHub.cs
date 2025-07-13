@@ -2,7 +2,7 @@ namespace CheckboxHubv1.Hubs;
 
 using System.Text.RegularExpressions;
 
-using CheckboxHubv1.CheckboxObservers;
+using CheckboxHubv1.CheckboxObserver;
 
 using GrainInterfaces;
 
@@ -31,7 +31,7 @@ public partial class CheckboxHub : Hub
 
     #region Properties
 
-    private HashSet<string>? ComboboxIds => Context.Items["ComboboxIds"] as HashSet<string>;
+    private HashSet<string>? CheckboxIds => Context.Items["CheckboxIds"] as HashSet<string>;
 
     #endregion
 
@@ -48,7 +48,7 @@ public partial class CheckboxHub : Hub
         await _checkboxObserverManager.SubscribeAsync(parsedId);
 
         // Remember that the current client subscribes to this checkbox-page.
-        ComboboxIds?.Add(parsedId);
+        CheckboxIds?.Add(parsedId);
 
         // Get the initial state of checkboxes.
         var checkboxGrain = _grainFactory.GetGrain<ICheckboxGrain>(parsedId);
@@ -66,21 +66,21 @@ public partial class CheckboxHub : Hub
         await _checkboxObserverManager.UnsubscribeAsync(parsedId);
 
         // The current connection no longer subscribes to the checkbox-page.
-        ComboboxIds?.Remove(parsedId);
+        CheckboxIds?.Remove(parsedId);
     }
 
     public override Task OnConnectedAsync()
     {
         // Create a list to keep track of which checkbox-pages the connection subscribes to.
-        Context.Items.Add("ComboboxIds", new HashSet<string>());
+        Context.Items.Add("CheckboxIds", new HashSet<string>());
         return Task.CompletedTask;
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        if (ComboboxIds != null)
+        if (CheckboxIds != null)
         {
-            foreach (var id in ComboboxIds)
+            foreach (var id in CheckboxIds)
             {
                 try
                 {
@@ -93,21 +93,31 @@ public partial class CheckboxHub : Hub
             }
 
             // Remove the list of checkbox-pages. 
-            ComboboxIds.Clear();
-            Context.Items.Remove("ComboboxIds");
+            CheckboxIds.Clear();
+            Context.Items.Remove("CheckboxIds");
         }
     }
 
-    public async Task SetCheckbox(string base64Id, int index, byte value)
+    public async Task<string?> SetCheckbox(string base64Id, int index, byte value)
     {
         if (base64Id.TryParse256BitBase64Id(out var parsedId) == false)
         {
             throw new ArgumentException("Invalid checkbox page id.", nameof(base64Id));
         }
 
-        // Set state of checkbox.
-        var checkboxGrain = _grainFactory.GetGrain<ICheckboxGrain>(parsedId);
-        await checkboxGrain.SetCheckbox(index, value);
+        try
+        {
+            // Set state of checkbox.
+            var checkboxGrain = _grainFactory.GetGrain<ICheckboxGrain>(parsedId);
+            await checkboxGrain.SetCheckbox(index, value);
+        }
+
+        catch (Exception ex)
+        {
+            return ex.Message;
+        }
+
+        return null;
     }
 
     #endregion

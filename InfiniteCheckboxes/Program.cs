@@ -6,16 +6,21 @@ using InfiniteCheckboxes.Utils;
 using Orleans.Configuration;
 using Orleans.Providers.MongoDB.Configuration;
 
+using WarHubv1;
+using WarHubv1.Options;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure options.
 builder.Services.Configure<CheckboxObserverOptions>(o => o.RedisConnectionString = builder.Configuration.GetConnectionString("PubSubRedis"));
+builder.Services.Configure<WarObserverOptions>(o => o.RedisConnectionString = builder.Configuration.GetConnectionString("PubSubRedis"));
 
 // ADd services.
 builder.Services.AddSignalR();
 builder.Services.AddControllers();
 builder.Services.AddDefaultExceptionHandler();
 builder.Services.AddCheckboxObserverService();
+builder.Services.AddWarObserverService();
 builder.Services.AddHsts(options => { options.MaxAge = TimeSpan.FromDays(365); });
 
 builder.UseOrleansClient(clientBuilder =>
@@ -55,7 +60,9 @@ app.UseExceptionHandler();
 app.UseStaticFiles();
 app.UseRouting();
 
+// Map SignalR hubs.
 app.MapCheckboxHubv1("/hubs/v1/CheckboxHub");
+app.MapWarHubv1("/hubs/v1/WarHub");
 
 app.MapControllerRoute(
     name: "default",

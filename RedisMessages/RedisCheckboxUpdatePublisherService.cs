@@ -11,7 +11,7 @@ using RedisMessages.Options;
 
 using StackExchange.Redis;
 
-public class RedisMessagePublisherService : IHostedService, IRedisMessagePublisherManager
+public class RedisCheckboxUpdatePublisherService : IHostedService, IRedisCheckboxUpdatePublisherManager
 {
     #region Static Fields
 
@@ -31,7 +31,7 @@ public class RedisMessagePublisherService : IHostedService, IRedisMessagePublish
 
     #region Constructors and Destructors
 
-    public RedisMessagePublisherService(IOptions<RedisMessagePublisherOptions> options)
+    public RedisCheckboxUpdatePublisherService(IOptions<RedisMessagePublisherOptions> options)
     {
         if (options.Value.RedisConnectionString == null)
         {

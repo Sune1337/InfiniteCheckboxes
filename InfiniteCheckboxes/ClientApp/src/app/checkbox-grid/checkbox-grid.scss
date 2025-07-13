@@ -1,0 +1,38 @@
+.scroll-container {
+  width: 100%;
+  height: 100%;
+  align-items: center; // Centers items horizontally
+}
+
+.checkbox-grid {
+  display: grid;
+}
+
+.scroll-item {
+  overflow-x: auto;
+  display: flex;
+  justify-content: center; // Centers the grid horizontally
+  width: 100%;
+
+
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 4px;
+  }
+
+  &.width-32 {
+    /* page-size (4096) / page-width (32) * item-size (24) */
+    height: 3072px;
+  }
+
+  &.width-64 {
+    /* page-size (4096) / page-width (64) * item-size (24) */
+    height: 1536px;
+  }
+
+  &.width-128 {
+    /* page-size (4096) / page-width (128) * item-size (24) */
+    height: 768px;
+  }
+}
