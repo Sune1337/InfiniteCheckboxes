@@ -217,3 +217,111 @@ helm diff upgrade infinite-checkboxes-prod .\infinite-checkboxes\ --namespace in
 ```
 
 
+# Installing Prometheus kube stack
+
+1. Create a namespace for monitoring
+```shell
+kubectl create namespace monitoring
+```
+
+2. Create an override file for kube-prometheus-stack to get persistent storage 
+```yaml
+prometheus:
+  prometheusSpec:
+    storageSpec:
+      volumeClaimTemplate:
+        metadata:
+          annotations:
+            "helm.sh/resource-policy": keep
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 40Gi
+          storageClassName: <Whatever your cluster supports>
+
+grafana:
+  persistence:
+    enabled: true
+    size: 40Gi
+    annotations:
+      "helm.sh/resource-policy": keep
+    storageClassName: <Whatever your cluster supports>
+
+alertmanager:
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        metadata:
+          annotations:
+            "helm.sh/resource-policy": keep
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 40Gi
+          storageClassName: <Whatever your cluster supports>
+```
+
+3. Install kube-prometheus-stack in monitoring namespace
+```shell
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+
+# Install with your values file
+helm install prometheus prometheus-community/kube-prometheus-stack -f prod-values.yaml --namespace monitoring
+```
+
+## Check status
+```shell
+kubectl --namespace monitoring get pods -l "release=prometheus"
+```
+
+## Get Grafana 'admin' user password by running
+```shell
+# Linux
+kubectl --namespace monitoring get secrets prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 -d ; echo
+
+# Powershell
+$encoded=$(kubectl --namespace monitoring get secrets prometheus-grafana -o jsonpath="{.data.admin-password}")
+[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($encoded))
+
+```
+
+## Access Grafana local instance
+```shell
+kubectl port-forward service/prometheus-grafana 3000:80 --namespace monitoring
+```
+
+# Create a servicemonitor
+Create a file `servicemonitor.yaml`.
+```yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: infinite-checkboxes-metrics-monitor
+  # This should be the namespace where kube-prometheus-stack is installed
+  namespace: monitoring
+  labels:
+    # This label is important - it should match the serviceMonitorSelector in your Prometheus CR
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - infinite-checkboxes-prod
+  selector:
+    matchLabels:
+      prometheus-metrics-server: "true"
+  endpoints:
+    - port: metrics  # The port name in your service that exposes metrics
+      # interval: 30s  # Optional: scrape interval, defaults to Prometheus global scrape interval
+      # path: /metrics  # Optional: metrics path if different from /metrics
+```
+
+Apply the file to the k8s cluster and verify it got created.
+```shell
+kubectl apply -f servicemonitor.yaml
+kubectl get servicemonitor -n monitoring
+```
+
+The metrics from silohost and webapp should be appearing in Prometheus / Grafana shortly.

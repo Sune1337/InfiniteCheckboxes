@@ -29,3 +29,7 @@ spec:
               value: "pubsub-redis:6379"
             - name: ConnectionStrings__ClusterMongoDb
               value: "mongodb://cluster-mongodb"
+            {{- if .Values.images.silohost.metricsServerPort }}
+            - name: MetricsServerPort
+              value: "{{ .Values.images.silohost.metricsServerPort }}"
+            {{- end }}

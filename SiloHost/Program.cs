@@ -2,8 +2,13 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
+using OpenTelemetry;
+using OpenTelemetry.Metrics;
+
 using Orleans.Configuration;
 using Orleans.Providers.MongoDB.Configuration;
+
+using Prometheus;
 
 using RedisMessages;
 using RedisMessages.Options;
@@ -54,5 +59,18 @@ var builder = Host.CreateDefaultBuilder(args)
     .UseConsoleLifetime();
 
 using var host = builder.Build();
+
+// Start a metrics server.
+var configuration = host.Services.GetRequiredService<IConfiguration>();
+var metricsServerPort = configuration.GetValue<int?>("MetricsServerPort");
+if (metricsServerPort != null)
+{
+    // Set up OpenTelemetry with Prometheus
+    using var meterProvider = Sdk.CreateMeterProviderBuilder()
+        .Build();
+
+    var metricServer = new MetricServer(port: metricsServerPort.Value);
+    metricServer.Start();
+}
 
 await host.RunAsync();

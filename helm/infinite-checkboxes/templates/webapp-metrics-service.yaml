@@ -1,0 +1,16 @@
+{{- if .Values.images.webapp.metricsServerPort }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp-metrics
+  labels:
+    {{- include "infinite-checkboxes.labels" . | nindent 4 }}
+    prometheus-metrics-server: "true"
+spec:
+  ports:
+    - name: metrics
+      port: {{ .Values.images.webapp.metricsServerPort }}
+      targetPort: {{ .Values.images.webapp.metricsServerPort }}
+  selector:
+    app: webapp
+{{- end }}

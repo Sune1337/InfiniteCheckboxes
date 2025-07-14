@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: infinite-checkboxes-metrics-monitor
+  # This should be the namespace where kube-prometheus-stack is installed
+  namespace: monitoring
+  labels:
+    # This label is important - it should match the serviceMonitorSelector in your Prometheus CR
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - infinite-checkboxes-prod
+  selector:
+    matchLabels:
+      prometheus-metrics-server: "true"
+  endpoints:
+    - port: metrics  # The port name in your service that exposes metrics
+      # interval: 30s  # Optional: scrape interval, defaults to Prometheus global scrape interval
+      # path: /metrics  # Optional: metrics path if different from /metrics

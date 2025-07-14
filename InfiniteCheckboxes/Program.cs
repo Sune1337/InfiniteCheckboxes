@@ -3,8 +3,13 @@ using CheckboxHubv1.Options;
 
 using InfiniteCheckboxes.Utils;
 
+using OpenTelemetry;
+using OpenTelemetry.Metrics;
+
 using Orleans.Configuration;
 using Orleans.Providers.MongoDB.Configuration;
+
+using Prometheus;
 
 using WarHubv1;
 using WarHubv1.Options;
@@ -78,4 +83,17 @@ app.MapFallbackToFile("index.html", new StaticFileOptions
     }
 });
 
-app.Run();
+// Start a metrics server.
+var metricsServerPort = app.Configuration.GetValue<int?>("MetricsServerPort");
+if (metricsServerPort != null)
+{
+    // Set up OpenTelemetry with Prometheus
+    using var meterProvider = Sdk.CreateMeterProviderBuilder()
+        .Build();
+
+    var metricServer = new MetricServer(port: metricsServerPort.Value);
+    metricServer.Start();
+}
+
+// Run Asp.Net app.
+await app.RunAsync();

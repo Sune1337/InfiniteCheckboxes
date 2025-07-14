@@ -17,14 +17,16 @@ images:
   silohost:
     replicaCount: 3
     repository: silohost
-    tag: 1.0.5
+    tag: 1.0.6
     pullPolicy: IfNotPresent
+    metricsServerPort:
 
   webapp:
     replicaCount: 1
     repository: webapp
-    tag: 1.0.9
+    tag: 1.0.10
     pullPolicy: IfNotPresent
+    metricsServerPort:
 
 imageCredentials:
   registry: registry.example.com
