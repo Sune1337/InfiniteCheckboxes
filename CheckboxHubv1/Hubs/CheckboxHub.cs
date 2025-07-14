@@ -1,6 +1,6 @@
 namespace CheckboxHubv1.Hubs;
 
-using System.Text.RegularExpressions;
+using System.Threading.RateLimiting;
 
 using CheckboxHubv1.CheckboxObserver;
 
@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.SignalR;
 
 using Two56bitId;
 
-public partial class CheckboxHub : Hub
+public class CheckboxHub : Hub
 {
     #region Fields
 
@@ -32,6 +32,7 @@ public partial class CheckboxHub : Hub
     #region Properties
 
     private HashSet<string>? CheckboxIds => Context.Items["CheckboxIds"] as HashSet<string>;
+    private FixedWindowRateLimiter? FixedWindowRateLimiter => Context.Items["FixedWindowRateLimiter"] as FixedWindowRateLimiter;
 
     #endregion
 
@@ -73,6 +74,13 @@ public partial class CheckboxHub : Hub
     {
         // Create a list to keep track of which checkbox-pages the connection subscribes to.
         Context.Items.Add("CheckboxIds", new HashSet<string>());
+        Context.Items.Add("FixedWindowRateLimiter", new FixedWindowRateLimiter(
+            new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromSeconds(1)
+            }
+        ));
         return Task.CompletedTask;
     }
 
@@ -96,10 +104,27 @@ public partial class CheckboxHub : Hub
             CheckboxIds.Clear();
             Context.Items.Remove("CheckboxIds");
         }
+
+        if (FixedWindowRateLimiter != null)
+        {
+            await FixedWindowRateLimiter.DisposeAsync();
+            Context.Items.Remove("FixedWindowRateLimiter");
+        }
     }
 
     public async Task<string?> SetCheckbox(string base64Id, int index, byte value)
     {
+        var acquired = false;
+        if (FixedWindowRateLimiter != null)
+        {
+            acquired = (await FixedWindowRateLimiter.AcquireAsync()).IsAcquired;
+        }
+
+        if (!acquired)
+        {
+            return "Too many requests. Try again later.";
+        }
+
         if (base64Id.TryParse256BitBase64Id(out var parsedId) == false)
         {
             throw new ArgumentException("Invalid checkbox page id.", nameof(base64Id));
@@ -119,13 +144,6 @@ public partial class CheckboxHub : Hub
 
         return null;
     }
-
-    #endregion
-
-    #region Methods
-
-    [GeneratedRegex("^[0-9a-fA-F]{1..64}$")]
-    private static partial Regex CheckboxPageIdRegex();
 
     #endregion
 }
