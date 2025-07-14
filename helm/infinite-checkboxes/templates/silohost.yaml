@@ -5,15 +5,18 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "infinite-checkboxes.labels" . | nindent 4 }}
+    orleans/serviceId: CheckboxService
 spec:
   replicas: {{ .Values.images.silohost.replicaCount }}
   selector:
     matchLabels:
-      app: silohost
+      orleans/serviceId: CheckboxService
   template:
     metadata:
       labels:
         app: silohost
+        orleans/serviceId: CheckboxService
+        orleans/clusterId: CheckboxCluster
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -24,6 +27,9 @@ spec:
         - name: silohost
           image: "{{ .Values.images.silohost.repository }}:{{ .Values.images.silohost.tag }}"
           imagePullPolicy: {{ .Values.images.silohost.pullPolicy }}
+          ports:
+            - containerPort: 11111
+            - containerPort: 30000
           env:
             - name: ConnectionStrings__PubSubRedis
               value: "pubsub-redis:6379"
@@ -33,3 +39,31 @@ spec:
             - name: MetricsServerPort
               value: "{{ .Values.images.silohost.metricsServerPort }}"
             {{- end }}
+            - name: ORLEANS_SERVICE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['orleans/serviceId']
+            - name: ORLEANS_CLUSTER_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['orleans/clusterId']
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: DOTNET_SHUTDOWNTIMEOUTSECONDS
+              value: "120"
+      terminationGracePeriodSeconds: 180
+  minReadySeconds: 60
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1

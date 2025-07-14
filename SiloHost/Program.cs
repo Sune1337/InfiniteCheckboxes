@@ -36,6 +36,14 @@ var builder = Host.CreateDefaultBuilder(args)
                     options.ServiceId = "CheckboxService";
                 }
             )
+            .Configure<ClusterMembershipOptions>(options =>
+            {
+                // Reduce how long we keep dead silos around
+                options.DefunctSiloExpiration = TimeSpan.FromMinutes(2);
+
+                // How often to cleanup defunct (dead) silos
+                options.DefunctSiloCleanupPeriod = TimeSpan.FromMinutes(1);
+            })
             .Configure<GrainCollectionOptions>(options => { options.CollectionAge = TimeSpan.FromMinutes(5); })
             .UseMongoDBClient(clusterMongoDbConnectionString)
             .UseMongoDBClustering(options =>
@@ -55,6 +63,12 @@ var builder = Host.CreateDefaultBuilder(args)
             })
             .ConfigureEndpoints(TcpPorts.GetNextFreeTcpPort(11111), TcpPorts.GetNextFreeTcpPort(30000))
             .UseDashboard(options => { });
+
+        var podNamespace = hostBuilderContext.Configuration.GetValue<string>("POD_NAMESPACE");
+        if (string.IsNullOrEmpty(podNamespace) == false)
+        {
+            siloBuilder.UseKubernetesHosting();
+        }
     })
     .UseConsoleLifetime();
 

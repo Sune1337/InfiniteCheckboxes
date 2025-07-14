@@ -1,0 +1,27 @@
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ include "infinite-checkboxes.fullname" . }}-orleans-hosting
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "infinite-checkboxes.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [ "" ]
+    resources: ["pods"]
+    verbs: ["get", "watch", "list", "delete", "patch"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ include "infinite-checkboxes.fullname" . }}-orleans-hosting-binding
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "infinite-checkboxes.labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "infinite-checkboxes.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ include "infinite-checkboxes.fullname" . }}-orleans-hosting
+  apiGroup: ''
