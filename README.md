@@ -25,7 +25,7 @@ cd <SolutionDir>\SiloHost\bin\Debug\net9.0
 .\SiloHost.exe
 ```
 
-## HOWTO: Run web-app
+## Run web-app
 1. Start the API-server  
 You can either just run the "InfiniteCheckboxes: https" from the IDE or run it from the shell.
 
@@ -40,7 +40,7 @@ cd <SolutionDir>\InfiniteCheckboxes\ClientApp
 npm run start
 ```
 
-# Build docker images and publish to registry
+# HOWTO: Build docker images and publish to registry
 
 ## SiloHost
 ```shell
@@ -59,7 +59,7 @@ docker push <Private registry>/infinite-checkboxes/webapp:1.0.0
 ```
 
 
-# Deploy to kubernetes cluster
+# HOWTO: Deploy to kubernetes cluster
 
 ## Create kubernetes cluster
 Do this as you wish. Make sure to download the configuration so you have access to the cluster.
@@ -100,7 +100,7 @@ kubectl get services -n traefik-namespace
 #traefik   LoadBalancer   10.96.43.157   <WAIT FOR IT> 80:31890/TCP,443:32587/TCP   116s
 ```
 
-# Use letsencrypt to issue certs.
+## Use letsencrypt to issue certs.
 First install cert-manager.
 ```shell
 # Install cert-manager
@@ -139,7 +139,7 @@ kubectl get clusterissuer
 
 
 
-## Deploy to a kubernetes cluster
+## Deploy helm chart to a kubernetes cluster
 This is done by installing a helm chart.
 
 Start by creating an override file with your config:
@@ -217,7 +217,7 @@ helm diff upgrade infinite-checkboxes-prod .\infinite-checkboxes\ --namespace in
 ```
 
 
-# Installing Prometheus kube stack
+# HOWTO: Install Prometheus kube stack
 
 1. Create a namespace for monitoring
 ```shell
@@ -293,7 +293,8 @@ $encoded=$(kubectl --namespace monitoring get secrets prometheus-grafana -o json
 kubectl port-forward service/prometheus-grafana 3000:80 --namespace monitoring
 ```
 
-# Create a servicemonitor
+## Create a service-monitor
+This is to save metrics from the metrics servers in silohost and webapp containers to Prometheus.
 Create a file `servicemonitor.yaml`.
 ```yaml
 apiVersion: monitoring.coreos.com/v1
