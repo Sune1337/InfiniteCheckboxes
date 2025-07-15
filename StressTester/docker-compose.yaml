@@ -1,0 +1,48 @@
+services:
+  
+  timescaledb:
+    image: timescale/timescaledb:2.14.2-pg16
+    command: postgres -c 'max_connections=500'
+    restart: always
+    ports:
+      - "5432:5432"
+    volumes:
+      - nb_studio_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: nb_studio_db
+      POSTGRES_USER: timescaledb
+      POSTGRES_PASSWORD: timescaledb
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d 'user=timescaledb dbname=nb_studio_db'" ]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+  
+  nbomber-studio:
+    image: nbomberdocker/nbomber-studio:0.3.0
+    ports:
+      - "5333:8080"
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    environment:
+      DBSETTINGS__CONNECTIONSTRING: "Host=timescaledb;Port=5432;Username=timescaledb;Password=timescaledb;Database=nb_studio_db;Pooling=true;"
+  
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - 5051:80
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+
+volumes:
+  nb_studio_data:
+    driver: local
+  
+  pgadmin-data:
+    driver: local
