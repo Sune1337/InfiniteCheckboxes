@@ -1,7 +1,8 @@
 namespace RedisMessages;
 
+using System.Diagnostics;
 using System.Text.Json;
-using System.Threading.Channels;
+using System.Threading.Tasks.Dataflow;
 
 using GrainInterfaces.War.Models;
 
@@ -9,6 +10,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 using RedisMessages.Messages;
+using RedisMessages.Metrics;
 using RedisMessages.Options;
 
 using StackExchange.Redis;
@@ -24,11 +26,8 @@ public class RedisWarUpdatePublisherService : IHostedService, IRedisWarUpdatePub
 
     #region Fields
 
-    private readonly CancellationTokenSource _publishWarUpdateMessagesTaskCancellationToken = new();
+    private readonly ActionBlock<WarUpdateMessage> _publisherBlock;
     private readonly string _redisConnectionString;
-    private readonly Channel<WarUpdateMessage> _warUpdateChannel = Channel.CreateUnbounded<WarUpdateMessage>();
-
-    private Task? _publishWarUpdateMessagesTask;
 
     #endregion
 
@@ -42,6 +41,14 @@ public class RedisWarUpdatePublisherService : IHostedService, IRedisWarUpdatePub
         }
 
         _redisConnectionString = options.Value.RedisConnectionString;
+        _publisherBlock = new ActionBlock<WarUpdateMessage>(
+            PublishWarUpdateMessages,
+            new ExecutionDataflowBlockOptions
+            {
+                MaxDegreeOfParallelism = 10,
+                BoundedCapacity = 1000
+            }
+        );
     }
 
     #endregion
@@ -50,33 +57,39 @@ public class RedisWarUpdatePublisherService : IHostedService, IRedisWarUpdatePub
 
     public async Task PublishWarUpdateAsync(long id, War war)
     {
-        await _warUpdateChannel.Writer.WriteAsync(
-            new WarUpdateMessage
-            {
-                Id = id,
-                War = war
-            }
-        );
+        WarUpdatePublisherManagerMetrics.QueuedMessageCount.Add(1);
+
+        try
+        {
+            await _publisherBlock.SendAsync(
+                new WarUpdateMessage
+                {
+                    Id = id,
+                    War = war
+                }
+            );
+        }
+
+        finally
+        {
+            WarUpdatePublisherManagerMetrics.QueuedMessageCount.Add(-1);
+        }
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         _redisConnection = await ConnectionMultiplexer.ConnectAsync(_redisConnectionString, c => c.AbortOnConnectFail = false);
         _redisSubscriber = _redisConnection.GetSubscriber();
-        _publishWarUpdateMessagesTask = PublishWarUpdateMessages();
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
+        _publisherBlock.Complete();
+        await _publisherBlock.Completion;
+
         if (_redisConnection != null)
         {
             await _redisConnection.DisposeAsync();
-        }
-
-        if (_publishWarUpdateMessagesTask != null)
-        {
-            await _publishWarUpdateMessagesTaskCancellationToken.CancelAsync();
-            await _publishWarUpdateMessagesTask;
         }
     }
 
@@ -84,31 +97,36 @@ public class RedisWarUpdatePublisherService : IHostedService, IRedisWarUpdatePub
 
     #region Methods
 
-    private async Task PublishWarUpdateMessages()
+    private async Task PublishWarUpdateMessages(WarUpdateMessage warUpdateMessage)
     {
+        if (_redisSubscriber == null)
+        {
+            return;
+        }
+
+
+        WarUpdatePublisherManagerMetrics.ActiveWorkers.Add(1);
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
+
         try
         {
-            while (_publishWarUpdateMessagesTaskCancellationToken.IsCancellationRequested == false)
-            {
-                var warUpdateMessage = await _warUpdateChannel.Reader.ReadAsync(_publishWarUpdateMessagesTaskCancellationToken.Token);
-                if (_redisSubscriber == null)
-                {
-                    continue;
-                }
-
-                var serializedWarUpdate = JsonSerializer.Serialize(warUpdateMessage.War);
-                await _redisSubscriber.PublishAsync(new RedisChannel($"WarUpdate:{warUpdateMessage.Id}", RedisChannel.PatternMode.Literal), serializedWarUpdate);
-            }
+            var serializedWarUpdate = JsonSerializer.Serialize(warUpdateMessage.War);
+            await _redisSubscriber.PublishAsync(new RedisChannel($"WarUpdate:{warUpdateMessage.Id}", RedisChannel.PatternMode.Literal), serializedWarUpdate);
+            WarUpdatePublisherManagerMetrics.MessagePublishCount.Add(1);
         }
 
-        catch (OperationCanceledException)
+        catch
         {
-            // Stop reading the channel.
+            WarUpdatePublisherManagerMetrics.MessageFailCount.Add(1);
+            throw;
         }
 
-        catch (ChannelClosedException)
+        finally
         {
-            // Stop reading the channel.
+            stopwatch.Stop();
+            WarUpdatePublisherManagerMetrics.ActiveWorkers.Add(-1);
+            WarUpdatePublisherManagerMetrics.MessagePublishLatency.Record(stopwatch.Elapsed.TotalMilliseconds);
         }
     }
 

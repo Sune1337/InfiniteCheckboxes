@@ -1,12 +1,14 @@
 namespace RedisMessages;
 
+using System.Diagnostics;
 using System.Text.Json;
-using System.Threading.Channels;
+using System.Threading.Tasks.Dataflow;
 
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 using RedisMessages.Messages;
+using RedisMessages.Metrics;
 using RedisMessages.Options;
 
 using StackExchange.Redis;
@@ -22,10 +24,8 @@ public class RedisCheckboxUpdatePublisherService : IHostedService, IRedisCheckbo
 
     #region Fields
 
-    private readonly Channel<CheckboxUpdateMessage> _checkboxUpdateChannel = Channel.CreateUnbounded<CheckboxUpdateMessage>();
-    private readonly CancellationTokenSource _publishCheckboxUpdateMessagesTaskCancellationToken = new();
+    private readonly ActionBlock<CheckboxUpdateMessage> _publisherBlock;
     private readonly string _redisConnectionString;
-    private Task? _publishCheckboxUpdateMessagesTask;
 
     #endregion
 
@@ -39,6 +39,14 @@ public class RedisCheckboxUpdatePublisherService : IHostedService, IRedisCheckbo
         }
 
         _redisConnectionString = options.Value.RedisConnectionString;
+        _publisherBlock = new ActionBlock<CheckboxUpdateMessage>(
+            PublishCheckboxUpdateMessages,
+            new ExecutionDataflowBlockOptions
+            {
+                MaxDegreeOfParallelism = 10,
+                BoundedCapacity = 1000
+            }
+        );
     }
 
     #endregion
@@ -47,37 +55,43 @@ public class RedisCheckboxUpdatePublisherService : IHostedService, IRedisCheckbo
 
     public async Task PublishCheckboxUpdateAsync(string id, int index, bool value)
     {
-        await _checkboxUpdateChannel.Writer.WriteAsync(
-            new CheckboxUpdateMessage
-            {
-                Id = id,
-                CheckboxUpdate = new CheckboxUpdate
+        CheckboxUpdatePublisherManagerMetrics.QueuedMessageCount.Add(1);
+
+        try
+        {
+            await _publisherBlock.SendAsync(
+                new CheckboxUpdateMessage
                 {
-                    Index = index,
-                    Value = (byte)(value ? 1 : 0)
+                    Id = id,
+                    CheckboxUpdate = new CheckboxUpdate
+                    {
+                        Index = index,
+                        Value = (byte)(value ? 1 : 0)
+                    }
                 }
-            }
-        );
+            );
+        }
+
+        finally
+        {
+            CheckboxUpdatePublisherManagerMetrics.QueuedMessageCount.Add(-1);
+        }
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         _redisConnection = await ConnectionMultiplexer.ConnectAsync(_redisConnectionString, c => c.AbortOnConnectFail = false);
         _redisSubscriber = _redisConnection.GetSubscriber();
-        _publishCheckboxUpdateMessagesTask = PublishCheckboxUpdateMessages();
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
+        _publisherBlock.Complete();
+        await _publisherBlock.Completion;
+
         if (_redisConnection != null)
         {
             await _redisConnection.DisposeAsync();
-        }
-
-        if (_publishCheckboxUpdateMessagesTask != null)
-        {
-            await _publishCheckboxUpdateMessagesTaskCancellationToken.CancelAsync();
-            await _publishCheckboxUpdateMessagesTask;
         }
     }
 
@@ -85,31 +99,36 @@ public class RedisCheckboxUpdatePublisherService : IHostedService, IRedisCheckbo
 
     #region Methods
 
-    private async Task PublishCheckboxUpdateMessages()
+    private async Task PublishCheckboxUpdateMessages(CheckboxUpdateMessage checkboxUpdateMessage)
     {
+        if (_redisSubscriber == null)
+        {
+            return;
+        }
+
+
+        CheckboxUpdatePublisherManagerMetrics.ActiveWorkers.Add(1);
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
+
         try
         {
-            while (_publishCheckboxUpdateMessagesTaskCancellationToken.IsCancellationRequested == false)
-            {
-                var checkboxUpdateMessage = await _checkboxUpdateChannel.Reader.ReadAsync(_publishCheckboxUpdateMessagesTaskCancellationToken.Token);
-                if (_redisSubscriber == null)
-                {
-                    continue;
-                }
-
-                var serializedCheckboxUpdate = JsonSerializer.Serialize(checkboxUpdateMessage.CheckboxUpdate);
-                await _redisSubscriber.PublishAsync(new RedisChannel($"CheckboxUpdate:{checkboxUpdateMessage.Id}", RedisChannel.PatternMode.Literal), serializedCheckboxUpdate);
-            }
+            var serializedCheckboxUpdate = JsonSerializer.Serialize(checkboxUpdateMessage.CheckboxUpdate);
+            await _redisSubscriber.PublishAsync(new RedisChannel($"CheckboxUpdate:{checkboxUpdateMessage.Id}", RedisChannel.PatternMode.Literal), serializedCheckboxUpdate);
+            CheckboxUpdatePublisherManagerMetrics.MessagePublishCount.Add(1);
         }
 
-        catch (OperationCanceledException)
+        catch
         {
-            // Stop reading the channel.
+            CheckboxUpdatePublisherManagerMetrics.MessageFailCount.Add(1);
+            throw;
         }
 
-        catch (ChannelClosedException)
+        finally
         {
-            // Stop reading the channel.
+            stopwatch.Stop();
+            CheckboxUpdatePublisherManagerMetrics.ActiveWorkers.Add(-1);
+            CheckboxUpdatePublisherManagerMetrics.MessagePublishLatency.Record(stopwatch.Elapsed.TotalMilliseconds);
         }
     }
 
