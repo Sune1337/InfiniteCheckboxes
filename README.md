@@ -198,6 +198,35 @@ cd <SolutionDir>\helm
 helm upgrade --install infinite-checkboxes-prod .\infinite-checkboxes\ --namespace infinite-checkboxes-prod -f .\prod-values.yaml
 ```
 
+## Log to Loki
+1. Include the serilog configuration in you overrides file.
+```yaml
+grafanaLokiSecrets:
+  Serilog__WriteTo__0__Args__credentials__login: ""
+  Serilog__WriteTo__0__Args__credentials__password: ""
+
+  silohost:
+    serilog:
+      Serilog__Using__0: Serilog.Sinks.Grafana.Loki;
+      Serilog__WriteTo__0__Name: GrafanaLoki;
+      Serilog__WriteTo__0__Args__uri: <URL TO YOUR LOKI SERVER>
+      Serilog__WriteTo__0__Args__labels__0__key: service_name;
+      Serilog__WriteTo__0__Args__labels__0__value: silohost;
+      Serilog__WriteTo__0__Args__propertiesAsLabels__0: "PodName"
+    grafanaLokiSecrets: grafana-loki-secrets
+      
+
+  webapp:
+    serilog:
+      Serilog__Using__0: Serilog.Sinks.Grafana.Loki;
+      Serilog__WriteTo__0__Name: GrafanaLoki;
+      Serilog__WriteTo__0__Args__uri: <URL TO YOUR LOKI SERVER>
+      Serilog__WriteTo__0__Args__labels__0__key: service_name;
+      Serilog__WriteTo__0__Args__labels__0__value: webapp;
+      Serilog__WriteTo__0__Args__propertiesAsLabels__0: "PodName"
+    grafanaLokiSecrets: grafana-loki-secrets
+```
+
 # Helm tips & tricks
 
 

@@ -61,6 +61,17 @@ spec:
                   fieldPath: status.podIP
             - name: DOTNET_SHUTDOWNTIMEOUTSECONDS
               value: "120"
+            {{- range $key, $value := .Values.images.silohost.serilog }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- range $key, $value := .Values.grafanaLokiSecrets }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-loki-secrets
+                  key: {{ $key }}
+            {{- end }}
       terminationGracePeriodSeconds: 180
   minReadySeconds: 5
   strategy:

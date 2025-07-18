@@ -33,3 +33,18 @@ spec:
             - name: MetricsServerPort
               value: "{{ .Values.images.webapp.metricsServerPort }}"
             {{- end }}
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            {{- range $key, $value := .Values.images.webapp.serilog }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- range $key, $value := .Values.grafanaLokiSecrets }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-loki-secrets
+                  key: {{ $key }}
+            {{- end }}

@@ -11,10 +11,20 @@ using Orleans.Providers.MongoDB.Configuration;
 
 using Prometheus;
 
+using Serilog;
+
 using WarHubv1;
 using WarHubv1.Options;
 
+Serilog.Debugging.SelfLog.Enable(msg => Console.Error.WriteLine(msg));
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host
+    .UseSerilog((hostBuilderContext, loggerConfiguration) =>
+    {
+        loggerConfiguration.ReadFrom.Configuration(hostBuilderContext.Configuration);
+    });
 
 // Configure options.
 builder.Services.Configure<CheckboxObserverOptions>(o => o.RedisConnectionString = builder.Configuration.GetConnectionString("PubSubRedis"));

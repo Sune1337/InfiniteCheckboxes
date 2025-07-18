@@ -13,9 +13,17 @@ using Prometheus;
 using RedisMessages;
 using RedisMessages.Options;
 
+using Serilog;
+
 using SiloHost.Utils;
 
+Serilog.Debugging.SelfLog.Enable(msg => Console.Error.WriteLine(msg));
+
 var builder = Host.CreateDefaultBuilder(args)
+    .UseSerilog((hostBuilderContext, loggerConfiguration) =>
+    {
+        loggerConfiguration.ReadFrom.Configuration(hostBuilderContext.Configuration);
+    })
     .ConfigureServices((hostBuilderContext, serviceCollection) =>
     {
         serviceCollection.Configure<RedisMessagePublisherOptions>(o => o.RedisConnectionString = hostBuilderContext.Configuration.GetConnectionString("PubSubRedis"));
@@ -88,3 +96,6 @@ if (metricsServerPort != null)
 }
 
 await host.RunAsync();
+
+// Flush logs.
+await Log.CloseAndFlushAsync();
