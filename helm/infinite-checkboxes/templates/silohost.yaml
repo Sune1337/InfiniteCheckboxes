@@ -62,7 +62,7 @@ spec:
             - name: DOTNET_SHUTDOWNTIMEOUTSECONDS
               value: "120"
       terminationGracePeriodSeconds: 180
-  minReadySeconds: 60
+  minReadySeconds: 5
   strategy:
     rollingUpdate:
       maxUnavailable: 0

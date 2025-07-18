@@ -6,6 +6,7 @@ import { WarHubService, Wars } from '../../../api/war-hub.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { War } from '../../../api/models/war';
 import { DatePipe } from '@angular/common';
+import { CheckboxesHubService, CheckboxPageStatistics } from '../../../api/checkboxes-hub.service';
 
 @Component({
   selector: 'app-war',
@@ -21,6 +22,7 @@ import { DatePipe } from '@angular/common';
 export class WarComponent implements AfterViewInit, OnDestroy {
 
   protected war = signal<War | null>(null);
+  protected numberOfPlayers = signal(0);
 
   @ViewChild(CheckboxGrid)
   private checkboxGrid!: CheckboxGrid;
@@ -28,6 +30,7 @@ export class WarComponent implements AfterViewInit, OnDestroy {
   private currentWarId = -1;
 
   private warHubService = inject(WarHubService);
+  private checkboxHubService = inject(CheckboxesHubService);
   private activatedRoute = inject(ActivatedRoute);
   private router = inject(Router);
 
@@ -39,6 +42,13 @@ export class WarComponent implements AfterViewInit, OnDestroy {
     this.warHubService.wars
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe(wars => this.warUpdated(wars));
+
+    // Register callback to handle checkbox-statistics updates.
+    this.checkboxHubService.checkboxStatistics
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe(checkboxStatistics => {
+        this.checkboxStatisticsUpdated(checkboxStatistics);
+      });
   }
 
   async ngAfterViewInit(): Promise<void> {
@@ -97,5 +107,19 @@ export class WarComponent implements AfterViewInit, OnDestroy {
     }
 
     this.war.set(updatedWar);
+  }
+
+  private checkboxStatisticsUpdated = (checkboxStatistics: CheckboxPageStatistics): void => {
+    const war = this.war();
+    if (!war?.warLocationId) {
+      return;
+    }
+
+    const stats = checkboxStatistics[war.warLocationId];
+    if (!stats){
+      return;
+    }
+
+    this.numberOfPlayers.set(stats.numberOfSubscribers);
   }
 }

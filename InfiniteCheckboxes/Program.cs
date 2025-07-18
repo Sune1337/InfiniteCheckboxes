@@ -20,14 +20,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<CheckboxObserverOptions>(o => o.RedisConnectionString = builder.Configuration.GetConnectionString("PubSubRedis"));
 builder.Services.Configure<WarObserverOptions>(o => o.RedisConnectionString = builder.Configuration.GetConnectionString("PubSubRedis"));
 
-// ADd services.
-builder.Services.AddSignalR();
-builder.Services.AddControllers();
-builder.Services.AddDefaultExceptionHandler();
-builder.Services.AddCheckboxObserverService();
-builder.Services.AddWarObserverService();
-builder.Services.AddHsts(options => { options.MaxAge = TimeSpan.FromDays(365); });
-
+// Start the Orleans client before services that might use it.
 builder.UseOrleansClient(clientBuilder =>
 {
     var clusterMongoDbConnectionString = clientBuilder.Configuration.GetConnectionString("ClusterMongoDb");
@@ -50,6 +43,14 @@ builder.UseOrleansClient(clientBuilder =>
             options.Strategy = MongoDBMembershipStrategy.SingleDocument;
         });
 });
+
+// Add services.
+builder.Services.AddSignalR();
+builder.Services.AddControllers();
+builder.Services.AddDefaultExceptionHandler();
+builder.Services.AddCheckboxServices();
+builder.Services.AddWarObserverService();
+builder.Services.AddHsts(options => { options.MaxAge = TimeSpan.FromDays(365); });
 
 var app = builder.Build();
 

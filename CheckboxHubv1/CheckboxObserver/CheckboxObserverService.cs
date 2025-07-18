@@ -5,6 +5,7 @@ using System.Threading.Channels;
 
 using CheckboxHubv1.Hubs;
 using CheckboxHubv1.Options;
+using CheckboxHubv1.Statistics;
 
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
@@ -44,6 +45,7 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
     private readonly ILogger _logger;
     private readonly CancellationTokenSource _readCheckboxUpdateMessagesTaskCancellationToken = new();
     private readonly string _redisConnectionString;
+    private readonly IStatisticsObserverManager _statisticsObserverManager;
     private readonly Dictionary<string, CheckboxPageUpdates> _subscriptions = new();
     private readonly Lock _subscriptionsLock = new();
     private Task? _readCheckboxUpdateMessagesTask;
@@ -52,16 +54,17 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
 
     #region Constructors and Destructors
 
-    public CheckboxObserverService(IOptions<CheckboxObserverOptions> options, IHubContext<CheckboxHub> checkboxHubContext, ILogger<CheckboxObserverService> logger)
+    public CheckboxObserverService(ILogger<CheckboxObserverService> logger, IOptions<CheckboxObserverOptions> options, IHubContext<CheckboxHub> checkboxHubContext, IStatisticsObserverManager statisticsObserverManager)
     {
         if (options.Value.RedisConnectionString == null)
         {
             throw new ArgumentNullException(nameof(options.Value.RedisConnectionString), "Redis connection string is null.");
         }
 
+        _logger = logger;
         _redisConnectionString = options.Value.RedisConnectionString;
         _checkboxHubContext = checkboxHubContext;
-        _logger = logger;
+        _statisticsObserverManager = statisticsObserverManager;
     }
 
     #endregion
@@ -119,6 +122,8 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
         {
             await _redisSubscriber.SubscribeAsync(new RedisChannel($"CheckboxUpdate:{id}", RedisChannel.PatternMode.Literal), WhenRedisMessageReceived);
         }
+
+        await _statisticsObserverManager.AddCheckboxSubscribers(id, 1);
     }
 
     public async Task UnsubscribeAsync(string id)
@@ -143,6 +148,8 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
         {
             await _redisSubscriber.UnsubscribeAsync(new RedisChannel($"CheckboxUpdate:{id}", RedisChannel.PatternMode.Literal), WhenRedisMessageReceived);
         }
+
+        await _statisticsObserverManager.AddCheckboxSubscribers(id, -1);
     }
 
     #endregion

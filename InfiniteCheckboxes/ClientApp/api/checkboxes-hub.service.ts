@@ -4,8 +4,10 @@ import { HubConnection, HubConnectionBuilder, RetryContext } from "@microsoft/si
 import { HubStatus, HubStatusService } from './hub-status.service';
 import { base64ToUint8Array, decompressBitArray } from '../utils/decompress';
 import { base64ToBigInt, bigIntToBase64, bigIntToHexString } from '../utils/bigint-utils';
+import { CheckboxStatistics } from './models/checkbox-statistics';
 
 export type CheckboxPages = { [id: string]: boolean[] };
+export type CheckboxPageStatistics = { [id: string]: CheckboxStatistics };
 type CheckboxPageSubscriptions = { [id: string]: Subscription };
 
 @Injectable({
@@ -14,18 +16,21 @@ type CheckboxPageSubscriptions = { [id: string]: Subscription };
 export class CheckboxesHubService {
 
   public checkboxPages: Subject<CheckboxPages>;
+  public checkboxStatistics: Subject<CheckboxPageStatistics>;
 
   private hubStatusService = inject(HubStatusService);
   private hubConnectionObservable: Observable<HubConnection>;
   private checkBoxPageSubscriptions: CheckboxPageSubscriptions = {};
   private privateCheckboxPages: CheckboxPages = {};
+  private privateCheckboxPageStatistics: CheckboxPageStatistics = {};
 
   constructor() {
     // Create observable to trigger connecting to hub.
     this.hubConnectionObservable = this.createHubConnectionObservable();
 
-    // Create machineSimulations observable.
+    // Create subjects.
     this.checkboxPages = new Subject<CheckboxPages>();
+    this.checkboxStatistics = new Subject<CheckboxPageStatistics>();
   }
 
   public subscribeToCheckboxPage = (id: bigint): void => {
@@ -48,6 +53,7 @@ export class CheckboxesHubService {
     this.checkBoxPageSubscriptions[hexId].unsubscribe();
     delete this.checkBoxPageSubscriptions[hexId];
     delete this.privateCheckboxPages[hexId];
+    delete this.privateCheckboxPageStatistics[hexId];
   }
 
   public setChecked = (id: bigint, index: number, isChecked: boolean): Promise<void> => {
@@ -90,6 +96,18 @@ export class CheckboxesHubService {
               }
 
               subscriber.next(items);
+            });
+
+            // Listen for updated statistics.
+            hubConnection.on(`StatisticsUpdate`, (base64PageId: string, checkboxStatistics: CheckboxStatistics) => {
+              const pageId = base64ToBigInt(base64PageId);
+              if (pageId !== id) {
+                return;
+              }
+
+              const hexId = bigIntToHexString(id);
+              this.privateCheckboxPageStatistics[hexId] = checkboxStatistics;
+              this.checkboxStatistics.next(this.privateCheckboxPageStatistics);
             });
 
             // Subscribe to items and process initial data.

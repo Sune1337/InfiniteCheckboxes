@@ -1,7 +1,7 @@
 <div class="layout-container">
   <header class="header">
     @if (war(); as war) {
-      Checked: {{ war.numberOfChecked }} Unchecked {{ war.numberOfUnchecked }}
+      Number of warriors: {{ numberOfPlayers() }} Checked: {{ war.numberOfChecked }} Unchecked {{ war.numberOfUnchecked }}
       <a href="javascript:void(0)" (click)="helpDialog.showModal()"><span class="help-link">?</span></a>
 
       @if (!war.startUtc) {
