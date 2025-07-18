@@ -31,7 +31,7 @@ images:
   webapp:
     replicaCount: 1
     repository: webapp
-    tag: 1.0.17
+    tag: 1.0.18
     pullPolicy: IfNotPresent
     metricsServerPort:
 #    serilog:

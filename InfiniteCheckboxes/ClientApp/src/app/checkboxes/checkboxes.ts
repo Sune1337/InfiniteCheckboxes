@@ -1,5 +1,6 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, inject, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CheckboxGrid } from '../checkbox-grid/checkbox-grid';
 
@@ -27,6 +28,13 @@ export class Checkboxes implements AfterViewInit {
 
   private activatedRoute = inject(ActivatedRoute);
   private router = inject(Router);
+  private title = inject(Title);
+  private meta = inject(Meta);
+
+  constructor(){
+    this.title.setTitle('Browse checkboxes');
+    this.meta.updateTag({ name: 'description', content: 'Browse checkboxes from the 256 bit address space.' });
+  }
 
   ngAfterViewInit() {
     this.activatedRoute.paramMap.subscribe(params => {

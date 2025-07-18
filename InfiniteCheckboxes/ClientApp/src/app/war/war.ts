@@ -1,12 +1,13 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, inject, OnDestroy, signal, ViewChild } from '@angular/core';
-import { CheckboxGrid } from "../checkbox-grid/checkbox-grid";
+import { DatePipe } from '@angular/common';
+import { Meta, Title } from '@angular/platform-browser';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ReactiveFormsModule } from "@angular/forms";
 import { Subject, takeUntil } from 'rxjs';
 import { WarHubService, Wars } from '../../../api/war-hub.service';
-import { ActivatedRoute, Router } from '@angular/router';
 import { War } from '../../../api/models/war';
-import { DatePipe } from '@angular/common';
 import { CheckboxesHubService, CheckboxPageStatistics } from '../../../api/checkboxes-hub.service';
+import { CheckboxGrid } from "../checkbox-grid/checkbox-grid";
 
 @Component({
   selector: 'app-war',
@@ -33,11 +34,16 @@ export class WarComponent implements AfterViewInit, OnDestroy {
   private checkboxHubService = inject(CheckboxesHubService);
   private activatedRoute = inject(ActivatedRoute);
   private router = inject(Router);
+  private title = inject(Title);
+  private meta = inject(Meta);
 
   // Keep track of subscriptions to clean up when component destroys.
   private ngUnsubscribe = new Subject<void>();
 
   constructor() {
+    this.title.setTitle('Checkbox war');
+    this.meta.updateTag({ name: 'description', content: 'Play the checkbox war in real-time with warriors from all over the world. The goal is to check or uncheck all the checkboxes.' });
+
     // Register callback to handle updates to checkbox-pages.
     this.warHubService.wars
       .pipe(takeUntil(this.ngUnsubscribe))
