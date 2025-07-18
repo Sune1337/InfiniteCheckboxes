@@ -17,7 +17,7 @@ images:
   silohost:
     replicaCount: 3
     repository: silohost
-    tag: 1.0.16
+    tag: 1.0.17
     pullPolicy: IfNotPresent
     metricsServerPort:
 #    serilog:
@@ -31,7 +31,7 @@ images:
   webapp:
     replicaCount: 1
     repository: webapp
-    tag: 1.0.16
+    tag: 1.0.17
     pullPolicy: IfNotPresent
     metricsServerPort:
 #    serilog:

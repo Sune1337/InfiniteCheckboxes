@@ -1,16 +1,12 @@
 namespace RedisMessages;
 
-using System.Diagnostics;
 using System.Text.Json;
-using System.Threading.Tasks.Dataflow;
 
 using GrainInterfaces.War.Models;
 
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
-using RedisMessages.Messages;
-using RedisMessages.Metrics;
 using RedisMessages.Options;
 
 using StackExchange.Redis;
@@ -26,7 +22,6 @@ public class RedisWarUpdatePublisherService : IHostedService, IRedisWarUpdatePub
 
     #region Fields
 
-    private readonly ActionBlock<WarUpdateMessage> _publisherBlock;
     private readonly string _redisConnectionString;
 
     #endregion
@@ -41,14 +36,6 @@ public class RedisWarUpdatePublisherService : IHostedService, IRedisWarUpdatePub
         }
 
         _redisConnectionString = options.Value.RedisConnectionString;
-        _publisherBlock = new ActionBlock<WarUpdateMessage>(
-            PublishWarUpdateMessages,
-            new ExecutionDataflowBlockOptions
-            {
-                MaxDegreeOfParallelism = 10,
-                BoundedCapacity = 1000
-            }
-        );
     }
 
     #endregion
@@ -57,23 +44,13 @@ public class RedisWarUpdatePublisherService : IHostedService, IRedisWarUpdatePub
 
     public async Task PublishWarUpdateAsync(long id, War war)
     {
-        WarUpdatePublisherManagerMetrics.QueuedMessageCount.Add(1);
-
-        try
+        if (_redisSubscriber == null)
         {
-            await _publisherBlock.SendAsync(
-                new WarUpdateMessage
-                {
-                    Id = id,
-                    War = war
-                }
-            );
+            return;
         }
 
-        finally
-        {
-            WarUpdatePublisherManagerMetrics.QueuedMessageCount.Add(-1);
-        }
+        var serializedWarUpdate = JsonSerializer.Serialize(war);
+        await _redisSubscriber.PublishAsync(new RedisChannel($"WarUpdate:{id}", RedisChannel.PatternMode.Literal), serializedWarUpdate);
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -84,49 +61,9 @@ public class RedisWarUpdatePublisherService : IHostedService, IRedisWarUpdatePub
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        _publisherBlock.Complete();
-        await _publisherBlock.Completion;
-
         if (_redisConnection != null)
         {
             await _redisConnection.DisposeAsync();
-        }
-    }
-
-    #endregion
-
-    #region Methods
-
-    private async Task PublishWarUpdateMessages(WarUpdateMessage warUpdateMessage)
-    {
-        if (_redisSubscriber == null)
-        {
-            return;
-        }
-
-
-        WarUpdatePublisherManagerMetrics.ActiveWorkers.Add(1);
-        var stopwatch = new Stopwatch();
-        stopwatch.Start();
-
-        try
-        {
-            var serializedWarUpdate = JsonSerializer.Serialize(warUpdateMessage.War);
-            await _redisSubscriber.PublishAsync(new RedisChannel($"WarUpdate:{warUpdateMessage.Id}", RedisChannel.PatternMode.Literal), serializedWarUpdate);
-            WarUpdatePublisherManagerMetrics.MessagePublishCount.Add(1);
-        }
-
-        catch
-        {
-            WarUpdatePublisherManagerMetrics.MessageFailCount.Add(1);
-            throw;
-        }
-
-        finally
-        {
-            stopwatch.Stop();
-            WarUpdatePublisherManagerMetrics.ActiveWorkers.Add(-1);
-            WarUpdatePublisherManagerMetrics.MessagePublishLatency.Record(stopwatch.Elapsed.TotalMilliseconds);
         }
     }
 

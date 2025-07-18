@@ -1,7 +1,6 @@
 namespace CheckboxHubv1.CheckboxObserver;
 
 using System.Text.Json;
-using System.Threading.Channels;
 
 using CheckboxHubv1.Hubs;
 using CheckboxHubv1.Options;
@@ -11,7 +10,6 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
 
 using RedisMessages;
-using RedisMessages.Messages;
 
 using StackExchange.Redis;
 
@@ -41,14 +39,11 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
     #region Fields
 
     private readonly IHubContext<CheckboxHub> _checkboxHubContext;
-    private readonly Channel<CheckboxUpdateMessage> _checkboxUpdateChannel = Channel.CreateUnbounded<CheckboxUpdateMessage>();
     private readonly ILogger _logger;
-    private readonly CancellationTokenSource _readCheckboxUpdateMessagesTaskCancellationToken = new();
     private readonly string _redisConnectionString;
     private readonly IStatisticsObserverManager _statisticsObserverManager;
     private readonly Dictionary<string, CheckboxPageUpdates> _subscriptions = new();
     private readonly Lock _subscriptionsLock = new();
-    private Task? _readCheckboxUpdateMessagesTask;
 
     #endregion
 
@@ -76,7 +71,6 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
         _redisConnection = await ConnectionMultiplexer.ConnectAsync(_redisConnectionString, c => c.AbortOnConnectFail = false);
         _redisSubscriber = _redisConnection.GetSubscriber();
         _redisConnection.ConnectionRestored += WhenConnectionRestored;
-        _readCheckboxUpdateMessagesTask = ReadCheckboxUpdateMessages();
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
@@ -85,12 +79,6 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
         {
             _redisConnection.ConnectionRestored -= WhenConnectionRestored;
             await _redisConnection.DisposeAsync();
-        }
-
-        if (_readCheckboxUpdateMessagesTask != null)
-        {
-            await _readCheckboxUpdateMessagesTaskCancellationToken.CancelAsync();
-            await _readCheckboxUpdateMessagesTask;
         }
     }
 
@@ -156,35 +144,6 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
 
     #region Methods
 
-    private async Task ReadCheckboxUpdateMessages()
-    {
-        try
-        {
-            while (_readCheckboxUpdateMessagesTaskCancellationToken.IsCancellationRequested == false)
-            {
-                var checkboxUpdateMessage = await _checkboxUpdateChannel.Reader.ReadAsync(_readCheckboxUpdateMessagesTaskCancellationToken.Token);
-
-                DebounceValues<int, byte>? debounceValues;
-                lock (_subscriptionsLock)
-                {
-                    debounceValues = _subscriptions.TryGetValue(checkboxUpdateMessage.Id, out var checkboxPageUpdates) ? checkboxPageUpdates.DebounceValues : null;
-                }
-
-                debounceValues?.DebounceValue(checkboxUpdateMessage.CheckboxUpdate.Index, checkboxUpdateMessage.CheckboxUpdate.Value);
-            }
-        }
-
-        catch (OperationCanceledException)
-        {
-            // Stop reading the channel.
-        }
-
-        catch (ChannelClosedException)
-        {
-            // Stop reading the channel.
-        }
-    }
-
     private void WhenConnectionRestored(object? sender, ConnectionFailedEventArgs e)
     {
         if (_redisSubscriber == null)
@@ -225,13 +184,13 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
                     return;
                 }
 
-                _checkboxUpdateChannel.Writer.TryWrite(
-                    new CheckboxUpdateMessage
-                    {
-                        Id = key[1],
-                        CheckboxUpdate = checkboxUpdate
-                    }
-                );
+                DebounceValues<int, byte>? debounceValues;
+                lock (_subscriptionsLock)
+                {
+                    debounceValues = _subscriptions.TryGetValue(key[1], out var checkboxPageUpdates) ? checkboxPageUpdates.DebounceValues : null;
+                }
+
+                debounceValues?.DebounceValue(checkboxUpdate.Index, checkboxUpdate.Value);
                 break;
         }
     }

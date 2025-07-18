@@ -1,14 +1,11 @@
 namespace WarHubv1.WarObserver;
 
 using System.Text.Json;
-using System.Threading.Channels;
 
 using GrainInterfaces.War.Models;
 
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
-
-using RedisMessages.Messages;
 
 using StackExchange.Redis;
 
@@ -39,14 +36,10 @@ public class WarObserverService : IHostedService, IWarObserverManager
     #region Fields
 
     private readonly ILogger _logger;
-    private readonly CancellationTokenSource _readWarUpdateMessagesTaskCancellationToken = new();
     private readonly string _redisConnectionString;
     private readonly Dictionary<long, WarUpdates> _subscriptions = new();
     private readonly Lock _subscriptionsLock = new();
     private readonly IHubContext<WarHub> _warHubContext;
-    private readonly Channel<WarUpdateMessage> _warUpdateChannel = Channel.CreateUnbounded<WarUpdateMessage>();
-
-    private Task? _readWarUpdateMessagesTask;
 
     #endregion
 
@@ -73,7 +66,6 @@ public class WarObserverService : IHostedService, IWarObserverManager
         _redisConnection = await ConnectionMultiplexer.ConnectAsync(_redisConnectionString, c => c.AbortOnConnectFail = false);
         _redisSubscriber = _redisConnection.GetSubscriber();
         _redisConnection.ConnectionRestored += WhenConnectionRestored;
-        _readWarUpdateMessagesTask = ReadWarUpdateMessages();
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
@@ -82,12 +74,6 @@ public class WarObserverService : IHostedService, IWarObserverManager
         {
             _redisConnection.ConnectionRestored -= WhenConnectionRestored;
             await _redisConnection.DisposeAsync();
-        }
-
-        if (_readWarUpdateMessagesTask != null)
-        {
-            await _readWarUpdateMessagesTaskCancellationToken.CancelAsync();
-            await _readWarUpdateMessagesTask;
         }
     }
 
@@ -151,35 +137,6 @@ public class WarObserverService : IHostedService, IWarObserverManager
 
     #region Methods
 
-    private async Task ReadWarUpdateMessages()
-    {
-        try
-        {
-            while (_readWarUpdateMessagesTaskCancellationToken.IsCancellationRequested == false)
-            {
-                var warUpdateMessage = await _warUpdateChannel.Reader.ReadAsync(_readWarUpdateMessagesTaskCancellationToken.Token);
-
-                DebounceValues<long, War>? debounceValues;
-                lock (_subscriptionsLock)
-                {
-                    debounceValues = _subscriptions.TryGetValue(warUpdateMessage.Id, out var warUpdates) ? warUpdates.DebounceValues : null;
-                }
-
-                debounceValues?.DebounceValue(warUpdateMessage.Id, warUpdateMessage.War);
-            }
-        }
-
-        catch (OperationCanceledException)
-        {
-            // Stop reading the channel.
-        }
-
-        catch (ChannelClosedException)
-        {
-            // Stop reading the channel.
-        }
-    }
-
     private void WhenConnectionRestored(object? sender, ConnectionFailedEventArgs e)
     {
         if (_redisSubscriber == null)
@@ -225,13 +182,13 @@ public class WarObserverService : IHostedService, IWarObserverManager
                     return;
                 }
 
-                _warUpdateChannel.Writer.TryWrite(
-                    new WarUpdateMessage
-                    {
-                        Id = id,
-                        War = warUpdate
-                    }
-                );
+                DebounceValues<long, War>? debounceValues;
+                lock (_subscriptionsLock)
+                {
+                    debounceValues = _subscriptions.TryGetValue(id, out var warUpdates) ? warUpdates.DebounceValues : null;
+                }
+
+                debounceValues?.DebounceValue(id, warUpdate);
                 break;
         }
     }
