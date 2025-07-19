@@ -1,10 +1,11 @@
 import { inject, Injectable } from '@angular/core';
-import { first, Observable, shareReplay, Subject, Subscription, timer } from "rxjs";
+import { first, Observable, ReplaySubject, shareReplay, Subject, Subscription, timer } from "rxjs";
 import { HubConnection, HubConnectionBuilder, RetryContext } from "@microsoft/signalr";
 import { HubStatus, HubStatusService } from './hub-status.service';
 import { base64ToUint8Array, decompressBitArray } from '../utils/decompress';
 import { base64ToBigInt, bigIntToBase64, bigIntToHexString } from '../utils/bigint-utils';
 import { CheckboxStatistics } from './models/checkbox-statistics';
+import { GlobalStatistics } from './models/GlobalStatistics';
 
 export type CheckboxPages = { [id: string]: boolean[] };
 export type CheckboxPageStatistics = { [id: string]: CheckboxStatistics };
@@ -17,6 +18,7 @@ export class CheckboxesHubService {
 
   public checkboxPages: Subject<CheckboxPages>;
   public checkboxStatistics: Subject<CheckboxPageStatistics>;
+  public globalStatistics: ReplaySubject<GlobalStatistics>;
 
   private hubStatusService = inject(HubStatusService);
   private hubConnectionObservable: Observable<HubConnection>;
@@ -31,6 +33,7 @@ export class CheckboxesHubService {
     // Create subjects.
     this.checkboxPages = new Subject<CheckboxPages>();
     this.checkboxStatistics = new Subject<CheckboxPageStatistics>();
+    this.globalStatistics = new ReplaySubject<GlobalStatistics>(1);
   }
 
   public subscribeToCheckboxPage = (id: bigint): void => {
@@ -98,8 +101,8 @@ export class CheckboxesHubService {
               subscriber.next(items);
             });
 
-            // Listen for updated statistics.
-            hubConnection.on(`StatisticsUpdate`, (base64PageId: string, checkboxStatistics: CheckboxStatistics) => {
+            // Listen for checkbox-page statistics.
+            hubConnection.on(`CS`, (base64PageId: string, checkboxStatistics: CheckboxStatistics) => {
               const pageId = base64ToBigInt(base64PageId);
               if (pageId !== id) {
                 return;
@@ -108,6 +111,13 @@ export class CheckboxesHubService {
               const hexId = bigIntToHexString(id);
               this.privateCheckboxPageStatistics[hexId] = checkboxStatistics;
               this.checkboxStatistics.next(this.privateCheckboxPageStatistics);
+            });
+
+            // Listen for global statistics.
+            hubConnection.on(`GS`, (numberOfChecked: number) => {
+              this.globalStatistics.next({
+                numberOfChecked
+              });
             });
 
             // Subscribe to items and process initial data.

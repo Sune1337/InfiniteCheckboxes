@@ -3,6 +3,7 @@ namespace CheckboxHubv1.Hubs;
 using System.Threading.RateLimiting;
 
 using CheckboxHubv1.CheckboxObserver;
+using CheckboxHubv1.Statistics;
 
 using GrainInterfaces;
 
@@ -16,15 +17,17 @@ public class CheckboxHub : Hub
 
     private readonly ICheckboxObserverManager _checkboxObserverManager;
     private readonly IGrainFactory _grainFactory;
+    private readonly IStatisticsObserverManager _statisticsObserverManager;
 
     #endregion
 
     #region Constructors and Destructors
 
-    public CheckboxHub(IGrainFactory grainFactory, ICheckboxObserverManager checkboxObserverManager)
+    public CheckboxHub(IGrainFactory grainFactory, ICheckboxObserverManager checkboxObserverManager, IStatisticsObserverManager statisticsObserverManager)
     {
         _grainFactory = grainFactory;
         _checkboxObserverManager = checkboxObserverManager;
+        _statisticsObserverManager = statisticsObserverManager;
     }
 
     #endregion
@@ -70,7 +73,7 @@ public class CheckboxHub : Hub
         CheckboxIds?.Remove(parsedId);
     }
 
-    public override Task OnConnectedAsync()
+    public override async Task OnConnectedAsync()
     {
         // Create a list to keep track of which checkbox-pages the connection subscribes to.
         Context.Items.Add("CheckboxIds", new HashSet<string>());
@@ -81,7 +84,14 @@ public class CheckboxHub : Hub
                 Window = TimeSpan.FromSeconds(1)
             }
         ));
-        return Task.CompletedTask;
+
+        // Get current checkbox-counters to seed client.
+        var checkboxCounters = _statisticsObserverManager.GetCheckboxCounters();
+        if (checkboxCounters != null)
+        {
+            var totalChecked = checkboxCounters.NumberOfUnchecked > checkboxCounters.NumberOfChecked ? 0 : checkboxCounters.NumberOfChecked - checkboxCounters.NumberOfUnchecked;
+            await Clients.Caller.SendAsync("GS", totalChecked);
+        }
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)

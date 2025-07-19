@@ -4,6 +4,7 @@ using global::CheckboxGrain.Models;
 using global::CheckboxGrain.Utils;
 
 using GrainInterfaces;
+using GrainInterfaces.Statistics;
 
 using RedisMessages;
 
@@ -18,6 +19,7 @@ public class CheckboxGrain : Grain, ICheckboxGrain
     #region Fields
 
     private readonly IPersistentState<CheckboxState> _checkboxState;
+    private readonly IGrainFactory _grainFactory;
     private readonly IRedisCheckboxUpdatePublisherManager _redisCheckboxUpdatePublisherManager;
 
     private bool[]? _decompressedData;
@@ -30,11 +32,13 @@ public class CheckboxGrain : Grain, ICheckboxGrain
     public CheckboxGrain(
         [PersistentState("CheckboxState", "CheckboxStore")]
         IPersistentState<CheckboxState> checkboxState,
-        IRedisCheckboxUpdatePublisherManager redisCheckboxUpdatePublisherManager
+        IRedisCheckboxUpdatePublisherManager redisCheckboxUpdatePublisherManager,
+        IGrainFactory grainFactory
     )
     {
         _checkboxState = checkboxState;
         _redisCheckboxUpdatePublisherManager = redisCheckboxUpdatePublisherManager;
+        _grainFactory = grainFactory;
     }
 
     #endregion
@@ -80,6 +84,10 @@ public class CheckboxGrain : Grain, ICheckboxGrain
             _decompressedData[index] = normalValue;
             _checkboxState.State.Checkboxes = CompressedBitArray.Compress(_decompressedData);
             await _checkboxState.WriteStateAsync();
+
+            // Update global statistics.
+            var checkUncheckCounter = _grainFactory.GetGrain<ICheckUncheckCounter>(0);
+            await checkUncheckCounter.AddCheckUncheck(normalValue ? 1 : 0, normalValue ? 0 : 1);
         }
 
         if (_grainId != null)

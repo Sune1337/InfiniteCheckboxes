@@ -69,6 +69,11 @@ var builder = Host.CreateDefaultBuilder(args)
                 options.DatabaseName = "WarGrains";
                 options.CreateShardKeyForCosmos = false;
             })
+            .AddMongoDBGrainStorage("StatisticsStore", options =>
+            {
+                options.DatabaseName = "StatisticsGrains";
+                options.CreateShardKeyForCosmos = false;
+            })
             .ConfigureEndpoints(TcpPorts.GetNextFreeTcpPort(11111), TcpPorts.GetNextFreeTcpPort(30000))
             .UseDashboard(options => { });
 

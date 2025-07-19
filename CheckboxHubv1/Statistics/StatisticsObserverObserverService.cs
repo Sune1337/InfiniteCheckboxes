@@ -17,6 +17,8 @@ public class StatisticsObserverObserverService : IHostedService, IStatisticsObse
     private readonly IGrainFactory _grainFactory;
     private readonly ILogger<StatisticsObserverObserverService> _logger;
     private readonly CancellationTokenSource _subscribeStatisticsTaskCancellationToken = new();
+
+    private CheckboxCounters? _checkboxCounters;
     private Task? _subscribeStatisticsTask;
 
     #endregion
@@ -40,10 +42,18 @@ public class StatisticsObserverObserverService : IHostedService, IStatisticsObse
         await statisticsGrain.AddCheckboxSubscribers(id, count);
     }
 
-    public Task StartAsync(CancellationToken cancellationToken)
+    public CheckboxCounters? GetCheckboxCounters()
+    {
+        return _checkboxCounters;
+    }
+
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
         _subscribeStatisticsTask = SubscribeStatisticsTask(_subscribeStatisticsTaskCancellationToken.Token);
-        return Task.CompletedTask;
+
+        // Get initial global statistics.
+        var statisticsGrain = _grainFactory.GetGrain<IStatisticsGrain>(0);
+        _checkboxCounters = await statisticsGrain.GetCheckboxCounters();
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
@@ -60,7 +70,19 @@ public class StatisticsObserverObserverService : IHostedService, IStatisticsObse
         var base64Id = Convert.ToBase64String(id.HexStringToByteArray());
         await _checkboxHubContext.Clients
             .Group($"{HubGroups.CheckboxGroupPrefix}_{id}")
-            .SendAsync("StatisticsUpdate", base64Id, checkboxStatistics);
+            .SendAsync("CS", base64Id, checkboxStatistics);
+    }
+
+    public async Task UpdateGlobalStatisticsAsync(ulong countChecked, ulong countUnchecked)
+    {
+        _checkboxCounters ??= new CheckboxCounters();
+        _checkboxCounters.NumberOfChecked = countChecked;
+        _checkboxCounters.NumberOfUnchecked = countUnchecked;
+
+        var totalChecked = countUnchecked > countChecked ? 0 : countChecked - countUnchecked;
+        await _checkboxHubContext.Clients
+            .All
+            .SendAsync("GS", totalChecked);
     }
 
     #endregion

@@ -14,6 +14,8 @@
 
     <a routerLink="/War" class="war-link">WAR</a>
 
+    <p>Number of checked: {{ numberOfChecked() ?? '...' }}</p>
+
     <dialog #helpDialog id="help-dialog" (click)="whenDialogClick($event, helpDialog)">
       <div class="help-dialog-content">
         The page input can be one of the following:

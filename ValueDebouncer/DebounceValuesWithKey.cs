@@ -6,12 +6,13 @@ public class DebounceValues<TKey, TValue> where TKey : notnull
 {
     #region Constants
 
-    private const int EmitDelay = 250;
+    private const int DefaultEmitDelay = 250;
 
     #endregion
 
     #region Fields
 
+    private readonly int _emitDelay;
     private readonly ILogger _logger;
     private readonly CancellationTokenSource _stopTasksTokenSource = new();
     private readonly Lock _valuesLock = new();
@@ -22,10 +23,10 @@ public class DebounceValues<TKey, TValue> where TKey : notnull
 
     #region Constructors and Destructors
 
-    public DebounceValues(ILogger logger)
+    public DebounceValues(ILogger logger, int emitDelay = DefaultEmitDelay)
     {
         _logger = logger;
-        _emitValuesTask = EmitValuesTask();
+        _emitDelay = emitDelay;
     }
 
     #endregion
@@ -70,7 +71,7 @@ public class DebounceValues<TKey, TValue> where TKey : notnull
     {
         try
         {
-            await Task.Delay(EmitDelay, _stopTasksTokenSource.Token);
+            await Task.Delay(_emitDelay, _stopTasksTokenSource.Token);
 
             Dictionary<TKey, TValue> localValues;
             lock (_valuesLock)
@@ -92,7 +93,7 @@ public class DebounceValues<TKey, TValue> where TKey : notnull
 
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Exception caught in DebounceValues.EmitValues: {ExceptionMessage}.", ex.Message);
+            _logger.LogError(ex, "Exception caught in DebounceValues.EmitValuesTask: {ExceptionMessage}.", ex.Message);
         }
     }
 
