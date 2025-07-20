@@ -23,6 +23,31 @@ public static class Two56BitIdParser
         return arr;
     }
 
+    /// <summary>
+    /// From: https://stackoverflow.com/questions/321370/how-can-i-convert-a-hex-string-to-a-byte-array
+    /// </summary>
+    public static int HexStringToByteArray(this string hex, Span<byte> buffer, int size)
+    {
+        if (hex.Length % 2 == 1)
+        {
+            throw new Exception("The binary key cannot have an odd number of digits");
+        }
+
+        var s = 0;
+        for (var i = 0; i < hex.Length >> 1; ++i)
+        {
+            s += 1;
+            if (s > size)
+            {
+                throw new Exception("buffer too small");
+            }
+
+            buffer[i] = (byte)((GetHexVal(hex[i << 1]) << 4) + (GetHexVal(hex[(i << 1) + 1])));
+        }
+
+        return s;
+    }
+
     public static string TrimLeadingZeroPairs(this string hex)
     {
         int startIndex = 0;

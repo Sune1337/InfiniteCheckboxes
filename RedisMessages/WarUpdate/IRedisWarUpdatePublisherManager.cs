@@ -1,4 +1,4 @@
-namespace RedisMessages;
+namespace RedisMessages.WarUpdate;
 
 using GrainInterfaces.War.Models;
 

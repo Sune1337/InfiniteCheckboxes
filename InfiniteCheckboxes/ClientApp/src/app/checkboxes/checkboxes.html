@@ -14,7 +14,10 @@
 
     <a routerLink="/War" class="war-link">WAR</a>
 
-    <p>Number of checked: {{ numberOfChecked() ?? '...' }}</p>
+    <p>
+      Number of checked: {{ numberOfChecked() ?? '...' }}
+      Your gold: {{ user()?.goldBalance ?? '...' }}
+    </p>
 
     <dialog #helpDialog id="help-dialog" (click)="whenDialogClick($event, helpDialog)">
       <div class="help-dialog-content">

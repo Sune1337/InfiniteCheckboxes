@@ -1,6 +1,8 @@
-namespace RedisMessages;
+namespace RedisMessages.UserUpdate;
 
 using System.Text.Json;
+
+using GrainInterfaces.User.Models;
 
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -9,7 +11,7 @@ using RedisMessages.Options;
 
 using StackExchange.Redis;
 
-public class RedisCheckboxUpdatePublisherService : IHostedService, IRedisCheckboxUpdatePublisherManager
+public class RedisUserUpdatePublisherService : IHostedService, IRedisUserUpdatePublisherManager
 {
     #region Static Fields
 
@@ -26,7 +28,7 @@ public class RedisCheckboxUpdatePublisherService : IHostedService, IRedisCheckbo
 
     #region Constructors and Destructors
 
-    public RedisCheckboxUpdatePublisherService(IOptions<RedisMessagePublisherOptions> options)
+    public RedisUserUpdatePublisherService(IOptions<RedisMessagePublisherOptions> options)
     {
         if (options.Value.RedisConnectionString == null)
         {
@@ -40,20 +42,15 @@ public class RedisCheckboxUpdatePublisherService : IHostedService, IRedisCheckbo
 
     #region Public Methods and Operators
 
-    public async Task PublishCheckboxUpdateAsync(string id, int index, bool value)
+    public async Task PublishUserUpdateAsync(string id, User user)
     {
         if (_redisSubscriber == null)
         {
             return;
         }
 
-        var serializedCheckboxUpdate = JsonSerializer.Serialize(new CheckboxUpdate
-        {
-            Index = index,
-            Value = (byte)(value ? 1 : 0)
-        });
-        
-        await _redisSubscriber.PublishAsync(new RedisChannel($"CheckboxUpdate:{id}", RedisChannel.PatternMode.Literal), serializedCheckboxUpdate);
+        var serializedUserUpdate = JsonSerializer.Serialize(user);
+        await _redisSubscriber.PublishAsync(new RedisChannel($"UserUpdate:{id}", RedisChannel.PatternMode.Literal), serializedUserUpdate);
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)

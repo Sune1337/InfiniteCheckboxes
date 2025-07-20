@@ -4,9 +4,10 @@ using global::CheckboxGrain.Models;
 using global::CheckboxGrain.Utils;
 
 using GrainInterfaces;
+using GrainInterfaces.GoldDigger;
 using GrainInterfaces.Statistics;
 
-using RedisMessages;
+using RedisMessages.CheckboxUpdate;
 
 public class CheckboxGrain : Grain, ICheckboxGrain
 {
@@ -23,7 +24,7 @@ public class CheckboxGrain : Grain, ICheckboxGrain
     private readonly IRedisCheckboxUpdatePublisherManager _redisCheckboxUpdatePublisherManager;
 
     private bool[]? _decompressedData;
-    private string? _grainId;
+    private string _grainId = null!;
 
     #endregion
 
@@ -80,6 +81,12 @@ public class CheckboxGrain : Grain, ICheckboxGrain
                 var checkboxCallbackGrain = GrainFactory.GetGrain<ICheckboxCallbackGrain>(_checkboxState.State.CallbackGrain.Value);
                 await checkboxCallbackGrain.WhenCheckboxesUpdated(_decompressedData, index, normalValue);
             }
+            else if (normalValue)
+            {
+                // Update gold-digger game.
+                var goldDiggerGrain = GrainFactory.GetGrain<IGoldDiggerGrain>(_grainId);
+                await goldDiggerGrain.IndexChecked(index, userId);
+            }
 
             _decompressedData[index] = normalValue;
             _checkboxState.State.Checkboxes = CompressedBitArray.Compress(_decompressedData);
@@ -90,10 +97,7 @@ public class CheckboxGrain : Grain, ICheckboxGrain
             await checkUncheckCounter.AddCheckUncheck(normalValue ? 1 : 0, normalValue ? 0 : 1);
         }
 
-        if (_grainId != null)
-        {
-            await _redisCheckboxUpdatePublisherManager.PublishCheckboxUpdateAsync(_grainId, index, normalValue);
-        }
+        await _redisCheckboxUpdatePublisherManager.PublishCheckboxUpdateAsync(_grainId, index, normalValue);
     }
 
     public async Task SetCheckboxes(byte[] checkboxes)

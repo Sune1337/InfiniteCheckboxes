@@ -2,6 +2,10 @@ namespace RedisMessages;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using RedisMessages.CheckboxUpdate;
+using RedisMessages.UserUpdate;
+using RedisMessages.WarUpdate;
+
 public static class RedisMessagesExtensions
 {
     #region Public Methods and Operators
@@ -17,6 +21,11 @@ public static class RedisMessagesExtensions
         services.AddSingleton<RedisWarUpdatePublisherService>();
         services.AddSingleton<IRedisWarUpdatePublisherManager>(serviceProvider => serviceProvider.GetRequiredService<RedisWarUpdatePublisherService>());
         services.AddHostedService<RedisWarUpdatePublisherService>(serviceProvider => serviceProvider.GetRequiredService<RedisWarUpdatePublisherService>());
+
+        // UserUpdate.
+        services.AddSingleton<RedisUserUpdatePublisherService>();
+        services.AddSingleton<IRedisUserUpdatePublisherManager>(serviceProvider => serviceProvider.GetRequiredService<RedisUserUpdatePublisherService>());
+        services.AddHostedService<RedisUserUpdatePublisherService>(serviceProvider => serviceProvider.GetRequiredService<RedisUserUpdatePublisherService>());
 
         return services;
     }

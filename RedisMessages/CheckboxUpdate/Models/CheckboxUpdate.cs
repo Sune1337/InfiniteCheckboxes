@@ -1,4 +1,4 @@
-namespace RedisMessages;
+namespace RedisMessages.CheckboxUpdate.Models;
 
 public class CheckboxUpdate
 {

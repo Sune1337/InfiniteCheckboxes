@@ -9,7 +9,7 @@ using CheckboxHubv1.Statistics;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
 
-using RedisMessages;
+using RedisMessages.CheckboxUpdate.Models;
 
 using StackExchange.Redis;
 
@@ -21,7 +21,8 @@ public class CheckboxPageUpdates(ILogger logger)
 {
     #region Fields
 
-    public readonly DebounceValues<int, byte> DebounceValues = new(logger);
+    public readonly DebounceValues<int, byte> DebounceCheckboxUpdate = new(logger);
+    public readonly DebounceValues<int, bool> DebounceGoldSpot = new(logger);
     public int Count = 1;
 
     #endregion
@@ -90,13 +91,22 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
             if (_subscriptions.TryGetValue(id, out var subscription) == false)
             {
                 var checkboxPageUpdates = new CheckboxPageUpdates(_logger);
-                checkboxPageUpdates.DebounceValues.EmitValues += async values =>
+                var base64Id = Convert.ToBase64String(id.HexStringToByteArray());
+
+                checkboxPageUpdates.DebounceCheckboxUpdate.EmitValues += async values =>
                 {
-                    var base64Id = Convert.ToBase64String(id.HexStringToByteArray());
                     await _checkboxHubContext.Clients
                         .Group($"{HubGroups.CheckboxGroupPrefix}_{id}")
                         .SendAsync("CheckboxesUpdate", base64Id, values.Select(v => (int[]) [v.Key, v.Value]));
                 };
+
+                checkboxPageUpdates.DebounceGoldSpot.EmitValues += async values =>
+                {
+                    await _checkboxHubContext.Clients
+                        .Group($"{HubGroups.CheckboxGroupPrefix}_{id}")
+                        .SendAsync("GoldSpot", base64Id, values.Keys);
+                };
+
                 _subscriptions.Add(id, checkboxPageUpdates);
                 startSubscribe = true;
             }
@@ -109,6 +119,7 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
         if (startSubscribe && _redisSubscriber != null)
         {
             await _redisSubscriber.SubscribeAsync(new RedisChannel($"CheckboxUpdate:{id}", RedisChannel.PatternMode.Literal), WhenRedisMessageReceived);
+            await _redisSubscriber.SubscribeAsync(new RedisChannel($"GoldSpot:{id}", RedisChannel.PatternMode.Literal), WhenRedisMessageReceived);
         }
 
         await _statisticsObserverManager.AddCheckboxSubscribers(id, 1);
@@ -135,6 +146,7 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
         if (stopSubscribe && _redisSubscriber != null)
         {
             await _redisSubscriber.UnsubscribeAsync(new RedisChannel($"CheckboxUpdate:{id}", RedisChannel.PatternMode.Literal), WhenRedisMessageReceived);
+            await _redisSubscriber.UnsubscribeAsync(new RedisChannel($"GoldSpot:{id}", RedisChannel.PatternMode.Literal), WhenRedisMessageReceived);
         }
 
         await _statisticsObserverManager.AddCheckboxSubscribers(id, -1);
@@ -156,6 +168,7 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
             foreach (var key in _subscriptions.Keys)
             {
                 _redisSubscriber.Subscribe(new RedisChannel($"CheckboxUpdate:{key}", RedisChannel.PatternMode.Literal), WhenRedisMessageReceived);
+                _redisSubscriber.Subscribe(new RedisChannel($"GoldSpot:{key}", RedisChannel.PatternMode.Literal), WhenRedisMessageReceived);
             }
         }
     }
@@ -167,8 +180,6 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
             return;
         }
 
-        var redisValueAsString = redisValue.ToString();
-
         var key = redisChannel.ToString().Split(':');
         if (key.Length != 2)
         {
@@ -178,19 +189,36 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
         switch (key[0])
         {
             case "CheckboxUpdate":
+                var redisValueAsString = redisValue.ToString();
                 var checkboxUpdate = JsonSerializer.Deserialize<CheckboxUpdate>(redisValueAsString);
                 if (checkboxUpdate == null)
                 {
                     return;
                 }
 
-                DebounceValues<int, byte>? debounceValues;
+                DebounceValues<int, byte>? debounceCheckboxUpdate;
                 lock (_subscriptionsLock)
                 {
-                    debounceValues = _subscriptions.TryGetValue(key[1], out var checkboxPageUpdates) ? checkboxPageUpdates.DebounceValues : null;
+                    debounceCheckboxUpdate = _subscriptions.TryGetValue(key[1], out var checkboxPageUpdates) ? checkboxPageUpdates.DebounceCheckboxUpdate : null;
                 }
 
-                debounceValues?.DebounceValue(checkboxUpdate.Index, checkboxUpdate.Value);
+                debounceCheckboxUpdate?.DebounceValue(checkboxUpdate.Index, checkboxUpdate.Value);
+                break;
+
+            case "GoldSpot":
+                if (redisValue.TryParse(out int redisValueAsInt) == false)
+                {
+                    break;
+                }
+
+                DebounceValues<int, bool>? debounceGoldSpot;
+                lock (_subscriptionsLock)
+                {
+                    debounceGoldSpot = _subscriptions.TryGetValue(key[1], out var checkboxPageUpdates) ? checkboxPageUpdates.DebounceGoldSpot : null;
+                }
+
+                debounceGoldSpot?.DebounceValue(redisValueAsInt, true);
+
                 break;
         }
     }

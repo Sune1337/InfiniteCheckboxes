@@ -41,10 +41,10 @@ public class CheckUncheckCounterGrain : Grain, ICheckUncheckCounter
         return Task.CompletedTask;
     }
 
-    public override Task OnDeactivateAsync(DeactivationReason reason, CancellationToken cancellationToken)
+    public override async Task OnDeactivateAsync(DeactivationReason reason, CancellationToken cancellationToken)
     {
         _grainTimer?.Dispose();
-        return Task.CompletedTask;
+        await ReportStatistics();
     }
 
     #endregion

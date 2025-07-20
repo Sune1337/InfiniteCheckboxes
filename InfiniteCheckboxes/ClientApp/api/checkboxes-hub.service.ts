@@ -7,8 +7,10 @@ import { base64ToUint8Array, decompressBitArray } from '../utils/decompress';
 import { base64ToBigInt, bigIntToBase64, bigIntToHexString } from '../utils/bigint-utils';
 import { CheckboxStatistics } from './models/checkbox-statistics';
 import { GlobalStatistics } from './models/GlobalStatistics';
+import { User } from './models/user';
 
 export type CheckboxPages = { [id: string]: boolean[] };
+export type GoldSpots = { [id: string]: number[] };
 export type CheckboxPageStatistics = { [id: string]: CheckboxStatistics };
 type CheckboxPageSubscriptions = { [id: string]: Subscription };
 
@@ -18,13 +20,16 @@ type CheckboxPageSubscriptions = { [id: string]: Subscription };
 export class CheckboxesHubService {
 
   public checkboxPages: Subject<CheckboxPages>;
+  public goldSpots: Subject<GoldSpots>;
   public checkboxStatistics: Subject<CheckboxPageStatistics>;
   public globalStatistics: ReplaySubject<GlobalStatistics>;
+  public user: ReplaySubject<User>;
 
   private hubStatusService = inject(HubStatusService);
   private hubConnectionObservable: Observable<HubConnection>;
   private checkBoxPageSubscriptions: CheckboxPageSubscriptions = {};
   private privateCheckboxPages: CheckboxPages = {};
+  private privateGoldSpots: GoldSpots = {};
   private privateCheckboxPageStatistics: CheckboxPageStatistics = {};
 
   private userService = inject(UserService);
@@ -35,8 +40,10 @@ export class CheckboxesHubService {
 
     // Create subjects.
     this.checkboxPages = new Subject<CheckboxPages>();
+    this.goldSpots = new Subject<GoldSpots>();
     this.checkboxStatistics = new Subject<CheckboxPageStatistics>();
     this.globalStatistics = new ReplaySubject<GlobalStatistics>(1);
+    this.user = new ReplaySubject<User>(1);
   }
 
   public subscribeToCheckboxPage = (id: bigint): void => {
@@ -59,6 +66,7 @@ export class CheckboxesHubService {
     this.checkBoxPageSubscriptions[hexId].unsubscribe();
     delete this.checkBoxPageSubscriptions[hexId];
     delete this.privateCheckboxPages[hexId];
+    delete this.privateGoldSpots[hexId];
     delete this.privateCheckboxPageStatistics[hexId];
   }
 
@@ -89,8 +97,9 @@ export class CheckboxesHubService {
           .subscribe(async hubConnection => {
             const base64Id = bigIntToBase64(id);
             let items: boolean[] = [];
+            let goldSpots: number[] = [];
 
-            // Listen for updated data.
+            // Listen for updated checkbox-pages.
             hubConnection.on(`${methodName}Update`, (base64PageId: string, values: number[][]) => {
               const pageId = base64ToBigInt(base64PageId);
               if (pageId !== id) {
@@ -102,6 +111,22 @@ export class CheckboxesHubService {
               }
 
               subscriber.next(items);
+            });
+
+            // Listen for updated gold spots.
+            hubConnection.on(`GoldSpot`, (base64PageId: string, values: number[]) => {
+              const pageId = base64ToBigInt(base64PageId);
+              if (pageId !== id) {
+                return;
+              }
+
+              for (const value of values) {
+                goldSpots.push(value);
+              }
+
+              const hexId = bigIntToHexString(id);
+              this.privateGoldSpots[hexId] = goldSpots;
+              this.goldSpots.next(this.privateGoldSpots);
             });
 
             // Listen for checkbox-page statistics.
@@ -121,6 +146,11 @@ export class CheckboxesHubService {
               this.globalStatistics.next({
                 numberOfChecked
               });
+            });
+
+            // Listen for user updates.
+            hubConnection.on(`User`, (user: User) => {
+              this.user.next(user);
             });
 
             // Subscribe to items and process initial data.

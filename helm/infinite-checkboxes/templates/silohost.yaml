@@ -72,6 +72,13 @@ spec:
                   name: grafana-loki-secrets
                   key: {{ $key }}
             {{- end }}
+            {{- if .Values.images.silohost.goldDiggerRngSecret }}
+            - name: GoldDiggerRng__Secret
+              valueFrom:
+                secretKeyRef:
+                  name: golddigger-rng-secret
+                  key: GOLD_DIGGER_RNG_SECRET
+            {{- end }}
       terminationGracePeriodSeconds: 180
   minReadySeconds: 5
   strategy:

@@ -5,8 +5,11 @@ using System.Threading.RateLimiting;
 
 using CheckboxHubv1.CheckboxObserver;
 using CheckboxHubv1.Statistics;
+using CheckboxHubv1.UserObserver;
 
 using GrainInterfaces;
+using GrainInterfaces.GoldDigger;
+using GrainInterfaces.User;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -21,16 +24,18 @@ public class CheckboxHub : Hub
     private readonly ICheckboxObserverManager _checkboxObserverManager;
     private readonly IGrainFactory _grainFactory;
     private readonly IStatisticsObserverManager _statisticsObserverManager;
+    private readonly IUserObserverManager _userObserverManager;
 
     #endregion
 
     #region Constructors and Destructors
 
-    public CheckboxHub(IGrainFactory grainFactory, ICheckboxObserverManager checkboxObserverManager, IStatisticsObserverManager statisticsObserverManager)
+    public CheckboxHub(IGrainFactory grainFactory, ICheckboxObserverManager checkboxObserverManager, IStatisticsObserverManager statisticsObserverManager, IUserObserverManager userObserverManager)
     {
         _grainFactory = grainFactory;
         _checkboxObserverManager = checkboxObserverManager;
         _statisticsObserverManager = statisticsObserverManager;
+        _userObserverManager = userObserverManager;
     }
 
     #endregion
@@ -56,6 +61,14 @@ public class CheckboxHub : Hub
 
         // Remember that the current client subscribes to this checkbox-page.
         CheckboxIds?.Add(parsedId);
+
+        // Seed client with gold-spots.
+        var goldDiggerGrain = _grainFactory.GetGrain<IGoldDiggerGrain>(parsedId);
+        var goldSpots = await goldDiggerGrain.GetFoundGoldSpots();
+        if ((goldSpots?.Length ?? 0) > 0)
+        {
+            await Clients.Caller.SendAsync("GoldSpot", base64Id, goldSpots);
+        }
 
         // Get the initial state of checkboxes.
         var checkboxGrain = _grainFactory.GetGrain<ICheckboxGrain>(parsedId);
@@ -95,6 +108,16 @@ public class CheckboxHub : Hub
             var totalChecked = checkboxCounters.NumberOfUnchecked > checkboxCounters.NumberOfChecked ? 0 : checkboxCounters.NumberOfChecked - checkboxCounters.NumberOfUnchecked;
             await Clients.Caller.SendAsync("GS", totalChecked);
         }
+
+        // Subscribe to user updates.
+        var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new InvalidOperationException("User not logged in.");
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"{HubGroups.UserGroupPrefix}_{userId}");
+        await _userObserverManager.SubscribeAsync(userId);
+
+        // Get the current user to seed client.
+        var userGrain = _grainFactory.GetGrain<IUserGrain>(userId);
+        var user = await userGrain.GetUser();
+        await Clients.Caller.SendAsync("User", user);
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
@@ -123,6 +146,10 @@ public class CheckboxHub : Hub
             await FixedWindowRateLimiter.DisposeAsync();
             Context.Items.Remove("FixedWindowRateLimiter");
         }
+
+        // Unsubscribe to user updates.
+        var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new InvalidOperationException("User not logged in.");
+        await _userObserverManager.UnsubscribeAsync(userId);
     }
 
     public async Task<string?> SetCheckbox(string base64Id, int index, byte value)

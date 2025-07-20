@@ -6,7 +6,7 @@ using GrainInterfaces;
 using GrainInterfaces.War;
 using GrainInterfaces.War.Models;
 
-using RedisMessages;
+using RedisMessages.WarUpdate;
 
 using Two56bitId;
 

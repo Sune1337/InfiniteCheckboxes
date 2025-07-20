@@ -3,6 +3,7 @@ namespace CheckboxHubv1;
 using CheckboxHubv1.CheckboxObserver;
 using CheckboxHubv1.Hubs;
 using CheckboxHubv1.Statistics;
+using CheckboxHubv1.UserObserver;
 
 public static class CheckboxHubv1Extensions
 {
@@ -17,6 +18,10 @@ public static class CheckboxHubv1Extensions
         services.AddSingleton<CheckboxObserverService>();
         services.AddSingleton<ICheckboxObserverManager>(serviceProvider => serviceProvider.GetRequiredService<CheckboxObserverService>());
         services.AddHostedService<CheckboxObserverService>(serviceProvider => serviceProvider.GetRequiredService<CheckboxObserverService>());
+
+        services.AddSingleton<UserObserverService>();
+        services.AddSingleton<IUserObserverManager>(serviceProvider => serviceProvider.GetRequiredService<UserObserverService>());
+        services.AddHostedService<UserObserverService>(serviceProvider => serviceProvider.GetRequiredService<UserObserverService>());
 
         return services;
     }

@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\GrainInterfaces\GrainInterfaces.csproj" />
+      <ProjectReference Include="..\RedisMessages\RedisMessages.csproj" />
+      <ProjectReference Include="..\RngWithSecret\RngWithSecret.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Orleans.Runtime" Version="9.2.1" />
+      <PackageReference Include="Microsoft.Orleans.Sdk" Version="9.2.1" />
+    </ItemGroup>
+
+</Project>

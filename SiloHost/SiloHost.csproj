@@ -31,9 +31,12 @@
 
     <ItemGroup>
       <ProjectReference Include="..\CheckboxGrain\CheckboxGrain.csproj" />
+      <ProjectReference Include="..\GoldDiggerGrain\GoldDiggerGrain.csproj" />
       <ProjectReference Include="..\GrainInterfaces\GrainInterfaces.csproj" />
       <ProjectReference Include="..\RedisMessages\RedisMessages.csproj" />
+      <ProjectReference Include="..\RngWithSecret\RngWithSecret.csproj" />
       <ProjectReference Include="..\StatisticsGrain\StatisticsGrain.csproj" />
+      <ProjectReference Include="..\UserGrain\UserGrain.csproj" />
       <ProjectReference Include="..\WarGrain\WarGrain.csproj" />
     </ItemGroup>
 

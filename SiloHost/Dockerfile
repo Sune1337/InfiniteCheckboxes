@@ -9,10 +9,13 @@ COPY ["SiloHost/", "SiloHost/"]
 COPY ["CheckboxGrain/", "CheckboxGrain/"]
 COPY ["WarGrain/", "WarGrain/"]
 COPY ["StatisticsGrain/", "StatisticsGrain/"]
+COPY ["GoldDiggerGrain/", "GoldDiggerGrain/"]
+COPY ["UserGrain/", "UserGrain/"]
 COPY ["GrainInterfaces/", "GrainInterfaces/"]
 COPY ["RedisMessages/", "RedisMessages/"]
 COPY ["Two56BitId/", "Two56BitId/"]
 COPY ["ValueDebouncer/", "ValueDebouncer/"]
+COPY ["RngWithSecret/", "RngWithSecret/"]
 RUN dotnet restore "SiloHost/SiloHost.csproj"
 WORKDIR "/src/SiloHost"
 RUN dotnet build "./SiloHost.csproj" -c $BUILD_CONFIGURATION -o /app/build

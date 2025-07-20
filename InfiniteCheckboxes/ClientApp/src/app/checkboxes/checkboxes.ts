@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { CheckboxGrid } from '../checkbox-grid/checkbox-grid';
 import { CheckboxesHubService } from '../../../api/checkboxes-hub.service';
+import { User } from '../../../api/models/user';
 
 @Component({
   selector: 'app-checkboxes',
@@ -23,6 +24,7 @@ export class Checkboxes implements AfterViewInit, OnDestroy {
   protected selectedPageWidth = signal<number>(this.pageWidths[0]);
   protected pageInput = signal<string>('');
   protected numberOfChecked = signal<number | null>(null);
+  protected user = signal<User | null>(null)
 
   @ViewChild(CheckboxGrid)
   private checkboxGrid!: CheckboxGrid;
@@ -38,7 +40,7 @@ export class Checkboxes implements AfterViewInit, OnDestroy {
   // Keep track of subscriptions to clean up when component destroys.
   private ngUnsubscribe = new Subject<void>();
 
-  constructor(){
+  constructor() {
     this.title.setTitle('Browse checkboxes');
     this.meta.updateTag({ name: 'description', content: 'Browse checkboxes from the 256 bit address space.' });
   }
@@ -59,6 +61,12 @@ export class Checkboxes implements AfterViewInit, OnDestroy {
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe(stats => {
         this.numberOfChecked.set(stats.numberOfChecked);
+      });
+
+    this.checkboxHubService.user
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe(user => {
+        this.user.set(user);
       });
   }
 
