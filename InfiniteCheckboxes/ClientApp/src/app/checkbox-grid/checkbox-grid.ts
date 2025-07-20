@@ -111,19 +111,21 @@ export class CheckboxGrid implements AfterViewInit, OnDestroy {
   }
 
   protected onScroll = (): void => {
+    if (this.maxSize() > 0) {
+      return
+    }
+
     const renderedRange = this.viewport.getRenderedRange();
     const total = this.viewport.getDataLength();
 
-    if (this.maxSize() <= 0) {
-      // If we're near the end, add more items
-      if (renderedRange.end > total - 1) {
-        this.addItemsAtEnd();
-      }
+    // If we're near the end, add more items
+    if (renderedRange.end > total - 1) {
+      this.addItemsAtEnd();
+    }
 
-      // If we're near the start, add more items
-      if (renderedRange.start < 1) {
-        this.addItemsAtStart();
-      }
+    // If we're near the start, add more items
+    if (renderedRange.start < 1) {
+      this.addItemsAtStart();
     }
   }
 
@@ -137,6 +139,10 @@ export class CheckboxGrid implements AfterViewInit, OnDestroy {
       checkboxElement.checked = !isChecked
       alert(error.message);
     }
+  }
+
+  protected trackCheckboxPage = (index: number, item: IndexItem): any => {
+    return item.index;
   }
 
   private checkboxPageUpdated(checkboxPages: CheckboxPages) {
@@ -256,5 +262,4 @@ export class CheckboxGrid implements AfterViewInit, OnDestroy {
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     return BigInt('0x' + hashHex);
   }
-
 }
