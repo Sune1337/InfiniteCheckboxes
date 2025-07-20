@@ -15,6 +15,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\APIKeyAuthentication\APIKeyAuthentication.csproj" />
       <ProjectReference Include="..\CheckboxHubv1\CheckboxHubv1.csproj" />
       <ProjectReference Include="..\WarHubv1\WarHubv1.csproj" />
     </ItemGroup>

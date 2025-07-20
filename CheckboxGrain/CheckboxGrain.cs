@@ -62,7 +62,7 @@ public class CheckboxGrain : Grain, ICheckboxGrain
         await _checkboxState.WriteStateAsync();
     }
 
-    public async Task SetCheckbox(int index, byte value)
+    public async Task SetCheckbox(int index, byte value, string userId)
     {
         _decompressedData ??= CompressedBitArray.Decompress(_checkboxState.State.Checkboxes) ?? new bool[CheckboxPageSize];
         if (index < 0 || index >= _decompressedData.Length)

@@ -27,6 +27,7 @@ COPY ["GrainInterfaces/", "GrainInterfaces/"]
 COPY ["RedisMessages/", "RedisMessages/"]
 COPY ["Two56BitId/", "Two56BitId/"]
 COPY ["ValueDebouncer/", "ValueDebouncer/"]
+COPY ["APIKeyAuthentication/", "APIKeyAuthentication/"]
 RUN dotnet restore "InfiniteCheckboxes/InfiniteCheckboxes.csproj"
 WORKDIR "/src/InfiniteCheckboxes"
 RUN dotnet build "./InfiniteCheckboxes.csproj" -c $BUILD_CONFIGURATION -o /app/build

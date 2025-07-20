@@ -1,5 +1,6 @@
 namespace CheckboxHubv1.Hubs;
 
+using System.Security.Claims;
 using System.Threading.RateLimiting;
 
 using CheckboxHubv1.CheckboxObserver;
@@ -7,10 +8,12 @@ using CheckboxHubv1.Statistics;
 
 using GrainInterfaces;
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 using Two56bitId;
 
+[Authorize]
 public class CheckboxHub : Hub
 {
     #region Fields
@@ -143,8 +146,9 @@ public class CheckboxHub : Hub
         try
         {
             // Set state of checkbox.
+            var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new InvalidOperationException("User not logged in.");
             var checkboxGrain = _grainFactory.GetGrain<ICheckboxGrain>(parsedId);
-            await checkboxGrain.SetCheckbox(index, value);
+            await checkboxGrain.SetCheckbox(index, value, userId);
         }
 
         catch (Exception ex)

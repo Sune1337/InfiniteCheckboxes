@@ -3,10 +3,12 @@ namespace WarHubv1.Hubs;
 using GrainInterfaces.War;
 using GrainInterfaces.War.Models;
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 using WarHubv1.WarObserver;
 
+[Authorize]
 public class WarHub : Hub
 {
     #region Fields

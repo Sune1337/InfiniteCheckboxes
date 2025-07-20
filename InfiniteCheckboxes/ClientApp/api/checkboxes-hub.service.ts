@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { first, Observable, ReplaySubject, shareReplay, Subject, Subscription, timer } from "rxjs";
 import { HubConnection, HubConnectionBuilder, RetryContext } from "@microsoft/signalr";
 import { HubStatus, HubStatusService } from './hub-status.service';
+import { UserService } from '../src/services/user-service';
 import { base64ToUint8Array, decompressBitArray } from '../utils/decompress';
 import { base64ToBigInt, bigIntToBase64, bigIntToHexString } from '../utils/bigint-utils';
 import { CheckboxStatistics } from './models/checkbox-statistics';
@@ -25,6 +26,8 @@ export class CheckboxesHubService {
   private checkBoxPageSubscriptions: CheckboxPageSubscriptions = {};
   private privateCheckboxPages: CheckboxPages = {};
   private privateCheckboxPageStatistics: CheckboxPageStatistics = {};
+
+  private userService = inject(UserService);
 
   constructor() {
     // Create observable to trigger connecting to hub.
@@ -168,7 +171,7 @@ export class CheckboxesHubService {
 
         // Connect to hub.
         const hubConnection = new HubConnectionBuilder()
-          .withUrl('/hubs/v1/CheckboxHub')
+          .withUrl('/hubs/v1/CheckboxHub', { accessTokenFactory: this.userService.getUserId })
           .withAutomaticReconnect({
             // Retry connecting to hub until the observable is unsubscribed.
             nextRetryDelayInMilliseconds(retryContext: RetryContext): number | null {

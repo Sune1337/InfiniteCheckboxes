@@ -1,3 +1,5 @@
+using APIKeyAuthentication;
+
 using CheckboxHubv1;
 using CheckboxHubv1.Options;
 
@@ -55,6 +57,7 @@ builder.UseOrleansClient(clientBuilder =>
 });
 
 // Add services.
+builder.Services.AddAPIKeyAuthentication();
 builder.Services.AddSignalR();
 builder.Services.AddControllers();
 builder.Services.AddDefaultExceptionHandler();
@@ -73,13 +76,19 @@ if (!app.Environment.IsDevelopment())
 // Use exception handler.
 app.UseExceptionHandler();
 
+// Asp.Net requirements.
 app.UseStaticFiles();
 app.UseRouting();
+
+// Use auth and auth.
+app.UseAuthentication();
+app.UseAuthorization();
 
 // Map SignalR hubs.
 app.MapCheckboxHubv1("/hubs/v1/CheckboxHub");
 app.MapWarHubv1("/hubs/v1/WarHub");
 
+// If we use MVC controllers.
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller}/{action}"
