@@ -75,11 +75,14 @@ public class WarHub : Hub
 
     public async Task<War> WarsSubscribe(long id)
     {
-        await Groups.AddToGroupAsync(Context.ConnectionId, $"{HubGroups.WarGroupPrefix}_{id}");
-        await _warObserverManager.SubscribeAsync(id);
+        if (WarIds?.Contains(id) == false)
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"{HubGroups.WarGroupPrefix}_{id}");
+            await _warObserverManager.SubscribeAsync(id);
 
-        // Remember that the current client subscribes to this war.
-        WarIds?.Add(id);
+            // Remember that the current client subscribes to this war.
+            WarIds?.Add(id);
+        }
 
         // Get the initial state of war.
         var warManagerGrain = _grainFactory.GetGrain<IWarManagerGrain>(0);
@@ -88,6 +91,11 @@ public class WarHub : Hub
 
     public async Task WarsUnsubscribe(long id)
     {
+        if (WarIds?.Contains(id) == false)
+        {
+            return;
+        }
+
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"{HubGroups.WarGroupPrefix}_{id}");
         await _warObserverManager.UnsubscribeAsync(id);
 

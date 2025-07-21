@@ -56,18 +56,21 @@ public class CheckboxHub : Hub
             throw new ArgumentException("Invalid checkbox page id.", nameof(base64Id));
         }
 
-        await Groups.AddToGroupAsync(Context.ConnectionId, $"{HubGroups.CheckboxGroupPrefix}_{parsedId}");
-        await _checkboxObserverManager.SubscribeAsync(parsedId);
-
-        // Remember that the current client subscribes to this checkbox-page.
-        CheckboxIds?.Add(parsedId);
-
-        // Seed client with gold-spots.
-        var goldDiggerGrain = _grainFactory.GetGrain<IGoldDiggerGrain>(parsedId);
-        var goldSpots = await goldDiggerGrain.GetFoundGoldSpots();
-        if ((goldSpots?.Length ?? 0) > 0)
+        if (CheckboxIds?.Contains(parsedId) == false)
         {
-            await Clients.Caller.SendAsync("GoldSpot", base64Id, goldSpots);
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"{HubGroups.CheckboxGroupPrefix}_{parsedId}");
+            await _checkboxObserverManager.SubscribeAsync(parsedId);
+
+            // Remember that the current client subscribes to this checkbox-page.
+            CheckboxIds?.Add(parsedId);
+
+            // Seed client with gold-spots.
+            var goldDiggerGrain = _grainFactory.GetGrain<IGoldDiggerGrain>(parsedId);
+            var goldSpots = await goldDiggerGrain.GetFoundGoldSpots();
+            if ((goldSpots?.Length ?? 0) > 0)
+            {
+                await Clients.Caller.SendAsync("GoldSpot", base64Id, goldSpots);
+            }
         }
 
         // Get the initial state of checkboxes.
@@ -80,6 +83,11 @@ public class CheckboxHub : Hub
         if (base64Id.TryParse256BitBase64Id(out var parsedId) == false)
         {
             throw new ArgumentException("Invalid checkbox page id.", nameof(base64Id));
+        }
+
+        if (CheckboxIds?.Contains(parsedId) == false)
+        {
+            return;
         }
 
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"{HubGroups.CheckboxGroupPrefix}_{parsedId}");
