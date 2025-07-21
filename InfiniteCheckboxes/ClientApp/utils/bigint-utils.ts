@@ -61,5 +61,24 @@ export function bigIntToHexString(id: bigint): string {
   }
 
   return hexString;
-
 }
+
+export function base64ToUint8Array(base64: string): Uint8Array {
+  const binaryString = window.atob(base64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
+export function base64ToHexString(base64: string): string {
+  // Convert base64 to byte array
+  const bytes = base64ToUint8Array(base64);
+
+  // Convert byte array to hex string
+  return Array.from(bytes)
+    .map(byte => byte.toString(16).padStart(2, '0'))
+    .join('');
+}
+

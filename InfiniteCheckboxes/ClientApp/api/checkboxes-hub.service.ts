@@ -3,16 +3,16 @@ import { first, Observable, ReplaySubject, shareReplay, Subject, Subscription, t
 import { HubConnection, HubConnectionBuilder, RetryContext } from "@microsoft/signalr";
 import { HubStatus, HubStatusService } from './hub-status.service';
 import { UserService } from '../src/services/user-service';
-import { base64ToUint8Array, decompressBitArray } from '../utils/decompress';
-import { base64ToBigInt, bigIntToBase64, bigIntToHexString } from '../utils/bigint-utils';
+import { decompressBitArray } from '../utils/decompress';
+import { base64ToHexString, base64ToUint8Array, bigIntToBase64, bigIntToHexString } from '../utils/bigint-utils';
 import { CheckboxStatistics } from './models/checkbox-statistics';
 import { GlobalStatistics } from './models/GlobalStatistics';
 import { User } from './models/user';
+import { createTrackedSubject } from '../utils/tracked-subject';
 
 export type CheckboxPages = { [id: string]: boolean[] };
 export type GoldSpots = { [id: string]: number[] };
 export type CheckboxPageStatistics = { [id: string]: CheckboxStatistics };
-type CheckboxPageSubscriptions = { [id: string]: Subscription };
 
 @Injectable({
   providedIn: 'root'
@@ -22,16 +22,18 @@ export class CheckboxesHubService {
   public checkboxPages: Subject<CheckboxPages>;
   public goldSpots: Subject<GoldSpots>;
   public checkboxStatistics: Subject<CheckboxPageStatistics>;
-  public globalStatistics: ReplaySubject<GlobalStatistics>;
-  public user: ReplaySubject<User>;
+  public globalStatistics: Subject<GlobalStatistics>;
+  public user: Subject<User>;
 
-  private hubStatusService = inject(HubStatusService);
+  private subjectSubscribers = 0;
   private hubConnectionObservable: Observable<HubConnection>;
-  private checkBoxPageSubscriptions: CheckboxPageSubscriptions = {};
+  private hubConnectionSubscription?: Subscription;
+  private checkboxPageSubscriptions: { [id: string]: boolean } = {};
   private privateCheckboxPages: CheckboxPages = {};
   private privateGoldSpots: GoldSpots = {};
   private privateCheckboxPageStatistics: CheckboxPageStatistics = {};
 
+  private hubStatusService = inject(HubStatusService);
   private userService = inject(UserService);
 
   constructor() {
@@ -39,32 +41,57 @@ export class CheckboxesHubService {
     this.hubConnectionObservable = this.createHubConnectionObservable();
 
     // Create subjects.
-    this.checkboxPages = new Subject<CheckboxPages>();
-    this.goldSpots = new Subject<GoldSpots>();
-    this.checkboxStatistics = new Subject<CheckboxPageStatistics>();
-    this.globalStatistics = new ReplaySubject<GlobalStatistics>(1);
-    this.user = new ReplaySubject<User>(1);
+    this.checkboxPages = createTrackedSubject(() => new Subject<CheckboxPages>(), this.whenSubscribed, this.whenUnsubscribed);
+    this.goldSpots = createTrackedSubject(() => new Subject<GoldSpots>(), this.whenSubscribed, this.whenUnsubscribed);
+    this.checkboxStatistics = createTrackedSubject(() => new Subject<CheckboxPageStatistics>(), this.whenSubscribed, this.whenUnsubscribed);
+    this.globalStatistics = createTrackedSubject(() => new ReplaySubject<GlobalStatistics>(1), this.whenSubscribed, this.whenUnsubscribed);
+    this.user = createTrackedSubject(() => new ReplaySubject<User>(1), this.whenSubscribed, this.whenUnsubscribed);
   }
 
   public subscribeToCheckboxPage = (id: bigint): void => {
     const hexId = bigIntToHexString(id);
-    if (this.checkBoxPageSubscriptions[hexId] === undefined) {
-      this.checkBoxPageSubscriptions[hexId] = this.createDataObservable('Checkboxes', id)
-        .subscribe(items => {
-          this.privateCheckboxPages[hexId] = items;
-          this.checkboxPages.next(this.privateCheckboxPages);
-        });
+    if (this.checkboxPageSubscriptions[hexId]) {
+      return;
     }
+
+    this.checkboxPageSubscriptions[hexId] = true;
+    const base64Id = bigIntToBase64(id);
+
+    this.hubConnectionObservable
+      .pipe(first())
+      .subscribe(async hubConnection => {
+        const base64Data = await hubConnection.invoke(`CheckboxesSubscribe`, base64Id);
+        if (!this.checkboxPageSubscriptions[hexId]) {
+          // Caller stopped subscribing to this page before we got first data.
+          return;
+        }
+
+        if (base64Data === null) {
+          this.privateCheckboxPages[hexId] = Array(4096);
+        } else {
+          const compressedBytes = base64ToUint8Array(base64Data);
+          this.privateCheckboxPages[hexId] = decompressBitArray(compressedBytes);
+        }
+
+        this.checkboxPages.next(this.privateCheckboxPages);
+      });
   }
 
   public unsubscribeToCheckboxPage = (id: bigint): void => {
     const hexId = bigIntToHexString(id);
-    if (this.checkBoxPageSubscriptions[hexId] === undefined) {
+    if (!this.checkboxPageSubscriptions[hexId]) {
       return;
     }
 
-    this.checkBoxPageSubscriptions[hexId].unsubscribe();
-    delete this.checkBoxPageSubscriptions[hexId];
+    const base64Id = bigIntToBase64(BigInt(`0x${hexId}`));
+
+    this.hubConnectionObservable
+      .pipe(first())
+      .subscribe(async hubConnection => {
+        await hubConnection.invoke(`CheckboxesUnsubscribe`, base64Id);
+      });
+
+    delete this.checkboxPageSubscriptions[hexId];
     delete this.privateCheckboxPages[hexId];
     delete this.privateGoldSpots[hexId];
     delete this.privateCheckboxPageStatistics[hexId];
@@ -88,101 +115,88 @@ export class CheckboxesHubService {
     });
   }
 
-  private createDataObservable = (methodName: string, id: bigint): Observable<boolean[]> => {
-    return new Observable<boolean[]>(
-      subscriber => {
-        let unsubscribeData: () => Promise<void>;
+  private whenSubscribed = (): void => {
+    this.subjectSubscribers++;
 
-        const innerSubscription = this.hubConnectionObservable
-          .subscribe(async hubConnection => {
-            const base64Id = bigIntToBase64(id);
-            let items: boolean[] = [];
-            let goldSpots: number[] = [];
-
-            // Listen for updated checkbox-pages.
-            hubConnection.on(`${methodName}Update`, (base64PageId: string, values: number[][]) => {
-              const pageId = base64ToBigInt(base64PageId);
-              if (pageId !== id) {
-                return;
-              }
-
-              for (const value of values) {
-                items[value[0]] = value[1] != 0;
-              }
-
-              subscriber.next(items);
-            });
-
-            // Listen for updated gold spots.
-            hubConnection.on(`GoldSpot`, (base64PageId: string, values: number[]) => {
-              const pageId = base64ToBigInt(base64PageId);
-              if (pageId !== id) {
-                return;
-              }
-
-              for (const value of values) {
-                goldSpots.push(value);
-              }
-
-              const hexId = bigIntToHexString(id);
-              this.privateGoldSpots[hexId] = goldSpots;
-              this.goldSpots.next(this.privateGoldSpots);
-            });
-
-            // Listen for checkbox-page statistics.
-            hubConnection.on(`CS`, (base64PageId: string, checkboxStatistics: CheckboxStatistics) => {
-              const pageId = base64ToBigInt(base64PageId);
-              if (pageId !== id) {
-                return;
-              }
-
-              const hexId = bigIntToHexString(id);
-              this.privateCheckboxPageStatistics[hexId] = checkboxStatistics;
-              this.checkboxStatistics.next(this.privateCheckboxPageStatistics);
-            });
-
-            // Listen for global statistics.
-            hubConnection.on(`GS`, (numberOfChecked: number) => {
-              this.globalStatistics.next({
-                numberOfChecked
-              });
-            });
-
-            // Listen for user updates.
-            hubConnection.on(`User`, (user: User) => {
-              this.user.next(user);
-            });
-
-            // Subscribe to items and process initial data.
-            const base64Data = await hubConnection.invoke(`${methodName}Subscribe`, base64Id);
+    if (this.subjectSubscribers === 1) {
+      this.hubConnectionSubscription = this.hubConnectionObservable
+        .subscribe(async (hubConnection): Promise<void> => {
+          // Subscribe to checkbox-pages.
+          for (const hexId of Object.keys(this.privateCheckboxPages)) {
+            const bigIntId = BigInt(`0x${hexId}`);
+            const base64Id = bigIntToBase64(bigIntId);
+            const base64Data = await hubConnection.invoke(`CheckboxesSubscribe`, base64Id);
             if (base64Data === null) {
-              items = Array(4096);
+              this.privateCheckboxPages[hexId] = Array(4096);
             } else {
               const compressedBytes = base64ToUint8Array(base64Data);
-              items = decompressBitArray(compressedBytes);
+              this.privateCheckboxPages[hexId] = decompressBitArray(compressedBytes);
             }
-            subscriber.next(items);
 
-            // Unsubscribe to data when subscriber leaves.
-            unsubscribeData = async () => {
-              await hubConnection.invoke(`${methodName}Unsubscribe`, base64Id);
-            }
-          });
-
-        const unsubscribe = async () => {
-          if (unsubscribeData !== undefined) {
-            await unsubscribeData();
+            this.checkboxPages.next(this.privateCheckboxPages);
           }
+        });
+    }
+  }
 
-          innerSubscription.unsubscribe();
-        };
+  private whenUnsubscribed = (): void => {
+    this.subjectSubscribers--;
 
-        return () => {
-          unsubscribe();
-        }
+    if (this.subjectSubscribers === 0 && this.hubConnectionSubscription) {
+      this.hubConnectionSubscription.unsubscribe();
+      this.hubConnectionSubscription = undefined;
+    }
+  }
+
+  private beforeHubStart = (hubConnection: HubConnection): void => {
+    // This is the first connection to the hub. Register callbacks.
+
+    // Listen for updated checkbox-pages.
+    hubConnection.on('CheckboxesUpdate', (base64PageId: string, values: number[][]) => {
+      const pageId = base64ToHexString(base64PageId);
+      const items = this.privateCheckboxPages[pageId];
+      if (!items) {
+        return;
       }
-    )
-      .pipe(shareReplay({ bufferSize: 1, refCount: true }));
+
+      for (const value of values) {
+        items[value[0]] = value[1] != 0;
+      }
+
+      this.checkboxPages.next(this.privateCheckboxPages);
+    });
+
+    // Listen for updated gold spots.
+    hubConnection.on(`GoldSpot`, (base64PageId: string, values: number[]) => {
+      const pageId = base64ToHexString(base64PageId);
+      const items = this.privateGoldSpots[pageId] ?? [];
+
+      for (const value of values) {
+        items.push(value);
+      }
+
+      this.privateGoldSpots[pageId] = items;
+      this.goldSpots.next(this.privateGoldSpots);
+    });
+
+    // Listen for checkbox-page statistics.
+    hubConnection.on(`CS`, (base64PageId: string, checkboxStatistics: CheckboxStatistics) => {
+      const pageId = base64ToHexString(base64PageId);
+      this.privateCheckboxPageStatistics[pageId] = checkboxStatistics;
+      this.checkboxStatistics.next(this.privateCheckboxPageStatistics);
+    });
+
+    // Listen for global statistics.
+    hubConnection.on(`GS`, (numberOfChecked: number) => {
+      this.globalStatistics.next({
+        numberOfChecked
+      });
+    });
+
+    // Listen for user updates.
+    hubConnection.on(`User`, (user: User) => {
+      this.user.next(user);
+    });
   }
 
   /**
@@ -251,6 +265,7 @@ export class CheckboxesHubService {
           }
         }
 
+        this.beforeHubStart(hubConnection);
         startHubConnection();
 
         return () => {

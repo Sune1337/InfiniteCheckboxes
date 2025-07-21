@@ -50,13 +50,3 @@ export function decompressBitArray(compressed: Uint8Array): boolean[] {
 
   return result;
 }
-
-// Helper function to convert base64 string to Uint8Array (if receiving data from server)
-export function base64ToUint8Array(base64: string): Uint8Array {
-  const binaryString = window.atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
-}

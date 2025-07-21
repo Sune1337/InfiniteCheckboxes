@@ -4,9 +4,9 @@ import { HubConnection, HubConnectionBuilder, RetryContext } from "@microsoft/si
 import { HubStatus, HubStatusService } from './hub-status.service';
 import { War } from './models/war';
 import { UserService } from '../src/services/user-service';
+import { createTrackedSubject } from '../utils/tracked-subject';
 
 export type Wars = { [id: number]: War };
-type WarSubscriptions = { [id: number]: Subscription };
 
 @Injectable({
   providedIn: 'root'
@@ -15,54 +15,21 @@ export class WarHubService {
 
   public wars: Subject<Wars>;
 
-  private hubStatusService = inject(HubStatusService);
+  private subjectSubscribers = 0;
   private hubConnectionObservable: Observable<HubConnection>;
-  private warSubscriptions: WarSubscriptions = {};
+  private hubConnectionSubscription?: Subscription;
+  private warSubscriptions: { [id: string]: boolean } = {};
   private privateWars: Wars = {};
 
+  private hubStatusService = inject(HubStatusService);
   private userService = inject(UserService);
 
   constructor() {
     // Create observable to trigger connecting to hub.
     this.hubConnectionObservable = this.createHubConnectionObservable();
 
-    // Create machineSimulations observable.
-    this.wars = new Subject<Wars>();
-  }
-
-  public subscribeToWar = (id: number): void => {
-    if (this.warSubscriptions[id] === undefined) {
-      this.warSubscriptions[id] = this.createDataObservable('Wars', id)
-        .subscribe(war => {
-          this.privateWars[id] = war;
-          this.wars.next(this.privateWars);
-        });
-    }
-  }
-
-  public unsubscribeToWar = (id: number): void => {
-    if (this.warSubscriptions[id] === undefined) {
-      return;
-    }
-
-    this.warSubscriptions[id].unsubscribe();
-    delete this.warSubscriptions[id];
-    delete this.privateWars[id];
-  }
-
-  public getCurrentWar = (): Promise<number> => {
-    return new Promise<number>(async (resolve, reject) => {
-      this.hubConnectionObservable
-        .pipe(first())
-        .subscribe(async hubConnection => {
-          try {
-            const warGameId = await hubConnection.invoke<number>(`GetCurrentWarId`);
-            resolve(warGameId);
-          } catch (error) {
-            reject(error)
-          }
-        });
-    });
+    // Create subjects.
+    this.wars = createTrackedSubject(() => new Subject<Wars>(), this.whenSubscribed, this.whenUnsubscribed);
   }
 
   private static parseWar = (war: War): War => {
@@ -83,48 +50,100 @@ export class WarHubService {
     return war;
   }
 
-  private createDataObservable = (methodName: string, id: number): Observable<War> => {
-    return new Observable<War>(
-      subscriber => {
-        let unsubscribeData: () => Promise<void>;
+  public subscribeToWar = (id: number): void => {
+    if (this.warSubscriptions[id]) {
+      return;
+    }
 
-        const innerSubscription = this.hubConnectionObservable
-          .subscribe(async hubConnection => {
-            let item: War;
+    this.warSubscriptions[id] = true;
 
-            // Listen for updated data.
-            hubConnection.on(`${methodName}Update`, (warId: number, war: War) => {
-              if (warId !== id) {
-                return;
-              }
-
-              subscriber.next(WarHubService.parseWar(war));
-            });
-
-            // Subscribe to items and process initial data.
-            const war = await hubConnection.invoke<War>(`${methodName}Subscribe`, id);
-            subscriber.next(WarHubService.parseWar(war));
-
-            // Unsubscribe to data when subscriber leaves.
-            unsubscribeData = async () => {
-              await hubConnection.invoke(`${methodName}Unsubscribe`, id);
-            }
-          });
-
-        const unsubscribe = async () => {
-          if (unsubscribeData !== undefined) {
-            await unsubscribeData();
-          }
-
-          innerSubscription.unsubscribe();
-        };
-
-        return () => {
-          unsubscribe();
+    this.hubConnectionObservable
+      .pipe(first())
+      .subscribe(async hubConnection => {
+        const war = await hubConnection.invoke(`WarsSubscribe`, id);
+        if (!this.warSubscriptions[id]) {
+          // Caller stopped subscribing to this page before we got first data.
+          return;
         }
+
+        this.privateWars[id] = WarHubService.parseWar(war);
+        this.wars.next(this.privateWars);
+      });
+  }
+
+  public unsubscribeToWar = (id: number): void => {
+    if (!this.warSubscriptions[id]) {
+      return;
+    }
+
+    this.hubConnectionObservable
+      .pipe(first())
+      .subscribe(async hubConnection => {
+        await hubConnection.invoke(`WarsUnsubscribe`, id);
+      });
+
+    delete this.warSubscriptions[id];
+    delete this.privateWars[id];
+  }
+
+  public getCurrentWar = (): Promise<number> => {
+    return new Promise<number>(async (resolve, reject) => {
+      this.hubConnectionObservable
+        .pipe(first())
+        .subscribe(async hubConnection => {
+          try {
+            const warGameId = await hubConnection.invoke<number>(`GetCurrentWarId`);
+            resolve(warGameId);
+          } catch (error) {
+            reject(error)
+          }
+        });
+    });
+  }
+
+  private whenSubscribed = (): void => {
+    this.subjectSubscribers++;
+
+    if (this.subjectSubscribers === 1) {
+      this.hubConnectionSubscription = this.hubConnectionObservable
+        .subscribe(async (hubConnection): Promise<void> => {
+          // Subscribe to wars.
+          for (const idString of Object.keys(this.privateWars)) {
+            const id = parseInt(idString);
+            const war = await hubConnection.invoke(`WarsSubscribe`, id);
+            if (!this.warSubscriptions[id]) {
+              // Caller stopped subscribing to this page before we got first data.
+              return;
+            }
+
+            this.privateWars[id] = WarHubService.parseWar(war);
+            this.wars.next(this.privateWars);
+          }
+        });
+    }
+  }
+
+  private whenUnsubscribed = (): void => {
+    this.subjectSubscribers--;
+
+    if (this.subjectSubscribers === 0 && this.hubConnectionSubscription) {
+      this.hubConnectionSubscription.unsubscribe();
+      this.hubConnectionSubscription = undefined;
+    }
+  }
+
+  private beforeHubStart = (hubConnection: HubConnection): void => {
+    // This is the first connection to the hub. Register callbacks.
+
+    // Listen for updated data.
+    hubConnection.on(`WarsUpdate`, (warId: number, war: War) => {
+      if (!this.privateWars[warId]) {
+        return;
       }
-    )
-      .pipe(shareReplay({ bufferSize: 1, refCount: true }));
+
+      this.privateWars[warId] = WarHubService.parseWar(war);
+      this.wars.next(this.privateWars);
+    });
   }
 
   /**
@@ -193,6 +212,7 @@ export class WarHubService {
           }
         }
 
+        this.beforeHubStart(hubConnection);
         startHubConnection();
 
         return () => {
