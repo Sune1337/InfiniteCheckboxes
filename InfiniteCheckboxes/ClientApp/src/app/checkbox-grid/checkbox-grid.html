@@ -2,10 +2,8 @@
   <cdk-virtual-scroll-viewport [itemSize]="maxSize() ? 0 : itemSize()" class="scroll-container" (scrolledIndexChange)="onScroll()">
     <div *cdkVirtualFor="let item of checkBoxPages(); let pageIndex = index; trackBy: trackCheckboxPage" class="scroll-item width-{{ maxSize() ? 0 : gridWidth() }}">
       <div class="checkbox-grid" [style.grid-template-columns]="gridColumns()">
-        @for (isChecked of item.state(); track $index) {
-          @if (maxSize() <= 0 || (pageIndex * 4096 + $index) < maxSize()) {
-            <input type="checkbox" [checked]="isChecked" (change)="whenCheckboxChanged(item.pageId, $index, $event)" [class]="{ 'gold-spot': item.goldSpots().includes($index) }">
-          }
+        @for (isChecked of item.state() | limit: maxSize(); track $index) {
+          <input type="checkbox" [checked]="isChecked" (change)="whenCheckboxChanged(item.pageId, $index, $event)" [class]="{ 'gold-spot': item.goldSpots().includes($index) }">
         }
       </div>
     </div>

@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, OnDestroy, signal, ViewChild, WritableSignal } from '@angular/core';
 import { CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
-import { CheckboxesHubService, CheckboxPages, GoldSpots } from '../../../api/checkboxes-hub.service';
-import { sortHex } from '../../../utils/hex-string-sorter';
 import { Subject, takeUntil } from 'rxjs';
+import { CheckboxesHubService, CheckboxPages, GoldSpots } from '../../../api/checkboxes-hub.service';
+import { LimitPipe } from '../../utils/limit-pipe';
 
 interface CheckboxPage {
   pageId: bigint;
@@ -15,7 +15,8 @@ interface CheckboxPage {
   imports: [
     CdkFixedSizeVirtualScroll,
     CdkVirtualForOf,
-    CdkVirtualScrollViewport
+    CdkVirtualScrollViewport,
+    LimitPipe
   ],
   templateUrl: './checkbox-grid.html',
   styleUrl: './checkbox-grid.scss',
@@ -165,11 +166,9 @@ export class CheckboxGrid implements OnDestroy {
   }
 
   private checkboxPageUpdated(updatedCheckboxPages: CheckboxPages) {
-    const keys = Object.keys(updatedCheckboxPages);
-    const sortedKeys = sortHex(keys);
     const checkboxPages = [...this.checkBoxPages() || []];
 
-    for (const key of sortedKeys) {
+    for (const key of Object.keys(updatedCheckboxPages)) {
       const id = BigInt(`0x${key}`);
       for (const item of checkboxPages) {
         if (item.pageId === id) {
