@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, computed, effect, inject, input, OnDestroy, signal, ViewChild, WritableSignal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, OnDestroy, signal, ViewChild, WritableSignal } from '@angular/core';
 import { CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
 import { CheckboxesHubService, CheckboxPages, GoldSpots } from '../../../api/checkboxes-hub.service';
 import { sortHex } from '../../../utils/hex-string-sorter';
@@ -21,23 +21,20 @@ interface CheckboxPage {
   styleUrl: './checkbox-grid.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class CheckboxGrid implements AfterViewInit, OnDestroy {
+export class CheckboxGrid implements OnDestroy {
 
   public gridWidth = input(32);
   public maxSize = input(0);
 
   // Generate grid-template-columns value.
   protected gridColumns = computed(() => `repeat(${this.gridWidth()}, 24px)`);
-  protected checkBoxPages = signal<CheckboxPage[]>([]);
+  protected checkBoxPages = signal<CheckboxPage[] | null>(null);
 
   // The returned value of itemSize must match the values in checkboxes.scss.
   protected itemSize = computed<number>(() => 4096 / this.gridWidth() * this.rowHeight);
 
   @ViewChild(CdkVirtualScrollViewport)
   private viewport!: CdkVirtualScrollViewport;
-
-  @ViewChild(CdkVirtualForOf)
-  private virtualFor!: CdkVirtualForOf<any>;
 
   private rowHeight = 24;
   private subscribedPageIds: bigint[] = [];
@@ -66,37 +63,6 @@ export class CheckboxGrid implements AfterViewInit, OnDestroy {
     effect(() => this.whenPageWidthChange());
   }
 
-  ngAfterViewInit() {
-    // Subscribe to view changes
-    this.virtualFor.viewChange.subscribe(event => {
-      const data = this.checkBoxPages();
-      if (data.length === 0) return;
-
-      const visibleCheckboxPagesRange = {
-        first: data[event.start].pageId,
-        last: data[Math.min(event.end, data.length - 1)].pageId
-      };
-
-      // Stop subscribing to items not rendered.
-      for (let i = this.subscribedPageIds.length - 1; i >= 0; i--) {
-        const id = this.subscribedPageIds[i];
-        if (id < visibleCheckboxPagesRange.first || id > visibleCheckboxPagesRange.last) {
-          this.checkboxHubService.unsubscribeToCheckboxPage(id);
-          this.subscribedPageIds.splice(i, 1);
-        }
-      }
-
-      // Start subscribing to new items.
-      for (let i = event.start; i <= Math.min(event.end, data.length - 1); i++) {
-        const id = data[i].pageId;
-        if (this.subscribedPageIds.includes(id)) continue;
-
-        this.checkboxHubService.subscribeToCheckboxPage(id);
-        this.subscribedPageIds.push(id);
-      }
-    });
-  }
-
   ngOnDestroy() {
     for (const id of this.subscribedPageIds) {
       this.checkboxHubService.unsubscribeToCheckboxPage(id);
@@ -106,23 +72,39 @@ export class CheckboxGrid implements AfterViewInit, OnDestroy {
     this.ngUnsubscribe.complete();
   }
 
-  public navigateToPage = (id: string): void => {
-    // For some reason initial scrolling on page-reload does not work unless we do the initial navigation in setTimeout here.
-    // If we don't. scrolling works when using a page-id that needs to be hashed; and do not work when using a number or hex-string.
-    this.checkBoxPages.set([]);
+  public navigateToPage = async (id: string): Promise<void> => {
+    const pageId = await this.parseStringToBigInt(id);
+    const existingPage = this.checkBoxPages()?.find(p => p.pageId === pageId);
+    this.checkBoxPages.set([existingPage ?? this.createCheckboxPage(pageId)]);
 
-    setTimeout(() => {
-      this.goToPage(id);
-    });
+    if (this.viewport) {
+      // Reset the scroll position to top
+      this.viewport.scrollToIndex(0);
+
+      const firstRenderedItem = this.viewport.getRenderedRange().start;
+      if (firstRenderedItem == 0) {
+        // We're currently watching the first page, so the onscroll event will not be triggered by the virtual scroll.
+        this.onScroll();
+      }
+    }
   }
 
   protected onScroll = (): void => {
+    if (!this.viewport) {
+      return;
+    }
+
     if (this.maxSize() > 0) {
-      return
+      this.syncSubscriptions(0, 0);
+      return;
     }
 
     const renderedRange = this.viewport.getRenderedRange();
     const total = this.viewport.getDataLength();
+    if (renderedRange.start == 0 && renderedRange.end == 0) {
+      // Viewport has not rendered yet.
+      return;
+    }
 
     // If we're near the end, add more items
     if (renderedRange.end > total - 1) {
@@ -130,9 +112,12 @@ export class CheckboxGrid implements AfterViewInit, OnDestroy {
     }
 
     // If we're near the start, add more items
+    let addedItems = 0;
     if (renderedRange.start < 1) {
-      this.addItemsAtStart();
+      addedItems = this.addItemsAtStart();
     }
+
+    this.syncSubscriptions(renderedRange.start + addedItems, renderedRange.end + addedItems);
   }
 
   protected whenCheckboxChanged = async (id: bigint, index: number, event: Event): Promise<void> => {
@@ -151,10 +136,38 @@ export class CheckboxGrid implements AfterViewInit, OnDestroy {
     return item.pageId;
   }
 
+  private syncSubscriptions = (start: number, end: number): void => {
+    const data = this.checkBoxPages();
+    if (!data?.length) return;
+
+    const visibleCheckboxPagesRange = {
+      first: data[start].pageId,
+      last: data[Math.min(end, data.length - 1)].pageId
+    };
+
+    // Stop subscribing to items not rendered.
+    for (let i = this.subscribedPageIds.length - 1; i >= 0; i--) {
+      const id = this.subscribedPageIds[i];
+      if (id < visibleCheckboxPagesRange.first || id > visibleCheckboxPagesRange.last) {
+        this.checkboxHubService.unsubscribeToCheckboxPage(id);
+        this.subscribedPageIds.splice(i, 1);
+      }
+    }
+
+    // Start subscribing to new items.
+    for (let i = start; i <= Math.min(end, data.length - 1); i++) {
+      const id = data[i].pageId;
+      if (this.subscribedPageIds.includes(id)) continue;
+
+      this.checkboxHubService.subscribeToCheckboxPage(id);
+      this.subscribedPageIds.push(id);
+    }
+  }
+
   private checkboxPageUpdated(updatedCheckboxPages: CheckboxPages) {
     const keys = Object.keys(updatedCheckboxPages);
     const sortedKeys = sortHex(keys);
-    const checkboxPages = [...this.checkBoxPages()];
+    const checkboxPages = [...this.checkBoxPages() || []];
 
     for (const key of sortedKeys) {
       const id = BigInt(`0x${key}`);
@@ -169,7 +182,7 @@ export class CheckboxGrid implements AfterViewInit, OnDestroy {
   }
 
   private goldSpotsUpdated = (goldSpots: GoldSpots): void => {
-    const checkboxPages = [...this.checkBoxPages()];
+    const checkboxPages = [...this.checkBoxPages() || []];
     const keys = Object.keys(goldSpots);
 
     for (const key of keys) {
@@ -207,7 +220,7 @@ export class CheckboxGrid implements AfterViewInit, OnDestroy {
 
   private addItemsAtEnd() {
     const currentItems = this.checkBoxPages();
-    if (currentItems.length === 0) return;
+    if (!currentItems?.length) return;
 
     const lastIndex = currentItems[currentItems.length - 1].pageId;
     if (lastIndex >= this.MaxPageId) return;
@@ -223,12 +236,12 @@ export class CheckboxGrid implements AfterViewInit, OnDestroy {
     this.checkBoxPages.set([...currentItems, ...newItems]);
   }
 
-  private addItemsAtStart() {
+  private addItemsAtStart(): number {
     const currentItems = this.checkBoxPages();
-    if (currentItems.length === 0) return;
+    if (!currentItems?.length) return 0;
 
     const firstIndex = currentItems[0].pageId;
-    if (firstIndex <= this.MinPageId) return;
+    if (firstIndex <= this.MinPageId) return 0;
 
     const newItems: CheckboxPage[] = [];
     let prevIndex = firstIndex - BigInt(1);
@@ -245,6 +258,8 @@ export class CheckboxGrid implements AfterViewInit, OnDestroy {
       const newScrollOffset = oldScrollOffset + (newItems.length * this.itemSize());
       this.viewport.scrollTo({ top: newScrollOffset });
     });
+
+    return newItems.length;
   }
 
   private createCheckboxPage(pageId: bigint): CheckboxPage {
@@ -253,18 +268,6 @@ export class CheckboxGrid implements AfterViewInit, OnDestroy {
       state: signal(Array(4096)),
       goldSpots: signal([])
     };
-  }
-
-  private goToPage = async (id: string): Promise<void> => {
-    const pageId = await this.parseStringToBigInt(id);
-    const existingPage = this.checkBoxPages().find(p => p.pageId === pageId);
-    this.checkBoxPages.set([existingPage ?? this.createCheckboxPage(pageId)]);
-
-    // Reset the scroll position to top
-    this.viewport.scrollToIndex(0);
-
-    // Force layout recalculation
-    this.onScroll();
   }
 
   private async parseStringToBigInt(input: string): Promise<bigint> {
