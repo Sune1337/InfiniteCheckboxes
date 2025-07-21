@@ -23,10 +23,7 @@ Serilog.Debugging.SelfLog.Enable(msg => Console.Error.WriteLine(msg));
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host
-    .UseSerilog((hostBuilderContext, loggerConfiguration) =>
-    {
-        loggerConfiguration.ReadFrom.Configuration(hostBuilderContext.Configuration);
-    });
+    .UseSerilog((hostBuilderContext, loggerConfiguration) => { loggerConfiguration.ReadFrom.Configuration(hostBuilderContext.Configuration); });
 
 // Configure options.
 builder.Services.Configure<CheckboxObserverOptions>(o => o.RedisConnectionString = builder.Configuration.GetConnectionString("PubSubRedis"));
@@ -80,6 +77,12 @@ app.UseExceptionHandler();
 // Asp.Net requirements.
 app.UseStaticFiles();
 app.UseRouting();
+
+if (app.Configuration.GetValue<bool>("UseSerilogRequestLogging"))
+{
+    // Log HTTP-requests using Serilog.
+    app.UseEnrichedSerilogRequestLogging();
+}
 
 // Use auth and auth.
 app.UseAuthentication();

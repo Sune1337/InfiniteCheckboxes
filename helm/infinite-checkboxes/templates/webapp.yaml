@@ -48,3 +48,7 @@ spec:
                   name: grafana-loki-secrets
                   key: {{ $key }}
             {{- end }}
+            {{- if .Values.images.webapp.useSerilogRequestLogging }}
+            - name: UseSerilogRequestLogging
+              value: "true"
+            {{- end }}

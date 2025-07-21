@@ -100,6 +100,37 @@ kubectl get services -n traefik-namespace
 #traefik   LoadBalancer   10.96.43.157   <WAIT FOR IT> 80:31890/TCP,443:32587/TCP   116s
 ```
 
+### If you want to enable proxy-protocol
+You may need to do this to be able to see clients real ip-addresses in request-logging.  
+Create a `traefik-values.yaml` file.
+```yaml
+ports:
+  web:
+    port: 8000
+    proxyProtocol:
+      enabled: true
+      trustedIPs:
+        - "10.0.0.0/8"
+  websecure:
+    port: 8443
+    proxyProtocol:
+      enabled: true
+      trustedIPs:
+        - "10.0.0.0/8"
+
+service:
+  annotations:
+    service.beta.kubernetes.io/vultr-loadbalancer-proxy-protocol: 'true'
+  spec:
+    externalTrafficPolicy: Local
+```
+
+Then upgrade the installation.
+```shell
+helm upgrade --namespace=traefik-namespace traefik traefik/traefik -f traefik-values.yaml
+```
+
+
 ## Use letsencrypt to issue certs.
 First install cert-manager.
 ```shell
