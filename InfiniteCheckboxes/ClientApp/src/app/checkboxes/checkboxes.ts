@@ -1,10 +1,11 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, inject, OnDestroy, signal, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit, signal, TemplateRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Meta, Title } from '@angular/platform-browser';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Subject, takeUntil } from 'rxjs';
+import { ActivatedRoute, NavigationEnd, Router, RouterLink } from '@angular/router';
+import { filter, Subject, takeUntil } from 'rxjs';
 import { CheckboxGrid } from '../checkbox-grid/checkbox-grid';
 import { CheckboxesHubService } from '../../../api/checkboxes-hub.service';
+import { HeaderService } from '../../utils/header.service';
 import { User } from '../../../api/models/user';
 
 @Component({
@@ -18,7 +19,7 @@ import { User } from '../../../api/models/user';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class Checkboxes implements AfterViewInit, OnDestroy {
+export class Checkboxes implements OnInit, AfterViewInit, OnDestroy {
 
   protected pageWidths = [32, 64, 128];
   protected selectedPageWidth = signal<number>(this.pageWidths[0]);
@@ -28,9 +29,12 @@ export class Checkboxes implements AfterViewInit, OnDestroy {
 
   @ViewChild(CheckboxGrid)
   private checkboxGrid!: CheckboxGrid;
+  @ViewChild('headerTemplate')
+  private headerTemplate!: TemplateRef<unknown>;
 
   private currentPageParam = '';
 
+  private headerService = inject(HeaderService);
   private checkboxHubService = inject(CheckboxesHubService);
   private activatedRoute = inject(ActivatedRoute);
   private router = inject(Router);
@@ -45,17 +49,34 @@ export class Checkboxes implements AfterViewInit, OnDestroy {
     this.meta.updateTag({ name: 'description', content: 'Browse checkboxes from the 256 bit address space.' });
   }
 
+  ngOnInit() {
+    this.router.events
+      .pipe(
+        filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+        takeUntil(this.ngUnsubscribe)
+      )
+      .subscribe(() => {
+        const id = this.activatedRoute?.snapshot.firstChild?.params['id'];
+        if (id) {
+          this.goToId(id);
+        }
+      });
+
+    const id = this.activatedRoute?.snapshot.firstChild?.params['id'];
+    if (id) {
+      this.currentPageParam = id;
+    } else {
+      this.router.navigate(['Checkboxes', 'Welcome!'], { replaceUrl: true });
+    }
+  }
+
   ngAfterViewInit() {
-    this.activatedRoute.paramMap.subscribe(params => {
-      const id = params.get('id');
-      if (id) {
-        this.pageInput.set(id);
-        this.currentPageParam = id;
-        this.checkboxGrid.navigateToPage(id);
-      } else {
-        this.router.navigate(['Checkboxes', 'Welcome!'], { replaceUrl: true });
-      }
-    });
+    // Set header template.
+    this.headerService.setHeader(this.headerTemplate);
+
+    if (this.currentPageParam) {
+      this.goToId(this.currentPageParam);
+    }
 
     this.checkboxHubService.globalStatistics
       .pipe(takeUntil(this.ngUnsubscribe))
@@ -70,7 +91,15 @@ export class Checkboxes implements AfterViewInit, OnDestroy {
       });
   }
 
+  private goToId = (id: string): void => {
+    this.currentPageParam = id;
+    this.pageInput.set(id);
+    this.checkboxGrid.navigateToPage(id);
+  }
+
   ngOnDestroy() {
+    this.headerService.setHeader(null);
+
     this.ngUnsubscribe.next();
     this.ngUnsubscribe.complete();
   }

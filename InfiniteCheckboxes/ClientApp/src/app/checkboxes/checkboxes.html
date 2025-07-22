@@ -1,5 +1,5 @@
-<div class="layout-container">
-  <header class="header">
+<ng-template #headerTemplate>
+  <div class="header">
     Width of grid:
     <select [(ngModel)]="selectedPageWidth">
       @for (width of pageWidths; track width) {
@@ -18,21 +18,21 @@
       Number of checked: {{ numberOfChecked() ?? '...' }}
       Your gold: {{ user()?.goldBalance ?? '...' }}
     </p>
-
-    <dialog #helpDialog id="help-dialog" (click)="whenDialogClick($event, helpDialog)">
-      <div class="help-dialog-content">
-        The page input can be one of the following:
-        <ul>
-          <li>Numbers: using only digits; ex 123456</li>
-          <li>Hex-numbers: using the prefix 0x and then using only 0-9a-f; ex 0xffa99</li>
-          <li>If none of the above 2 are used, a hash of the input is used as pagenumber.</li>
-        </ul>
-        There are 2^256 number of pages! That's very many pages.
-      </div>
-    </dialog>
-  </header>
-
-  <div class="checkbox-container">
-    <app-checkbox-grid [gridWidth]="selectedPageWidth()"></app-checkbox-grid>
   </div>
+</ng-template>
+
+<div class="checkbox-container">
+  <app-checkbox-grid [gridWidth]="selectedPageWidth()"></app-checkbox-grid>
 </div>
+
+<dialog #helpDialog id="help-dialog" (click)="whenDialogClick($event, helpDialog)">
+  <div class="help-dialog-content">
+    The page input can be one of the following:
+    <ul>
+      <li>Numbers: using only digits; ex 123456</li>
+      <li>Hex-numbers: using the prefix 0x and then using only 0-9a-f; ex 0xffa99</li>
+      <li>If none of the above 2 are used, a hash of the input is used as pagenumber.</li>
+    </ul>
+    There are 2^256 number of pages! That's very many pages.
+  </div>
+</dialog>

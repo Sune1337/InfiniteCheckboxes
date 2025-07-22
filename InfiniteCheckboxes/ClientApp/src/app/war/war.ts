@@ -1,35 +1,40 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, inject, OnDestroy, signal, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit, signal, TemplateRef, ViewChild } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Meta, Title } from '@angular/platform-browser';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule } from "@angular/forms";
-import { Subject, takeUntil } from 'rxjs';
+import { filter, Subject, takeUntil } from 'rxjs';
 import { WarHubService, Wars } from '../../../api/war-hub.service';
 import { War } from '../../../api/models/war';
 import { CheckboxesHubService, CheckboxPageStatistics } from '../../../api/checkboxes-hub.service';
 import { CheckboxGrid } from "../checkbox-grid/checkbox-grid";
+import { HeaderService } from '../../utils/header.service';
 
 @Component({
   selector: 'app-war',
   imports: [
     CheckboxGrid,
     ReactiveFormsModule,
-    DatePipe
+    DatePipe,
+    RouterLink
   ],
   templateUrl: './war.html',
   styleUrl: './war.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class WarComponent implements AfterViewInit, OnDestroy {
+export class WarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   protected war = signal<War | null>(null);
   protected numberOfPlayers = signal(0);
 
   @ViewChild(CheckboxGrid)
   private checkboxGrid!: CheckboxGrid;
+  @ViewChild('headerTemplate')
+  private headerTemplate!: TemplateRef<unknown>;
 
   private currentWarId = -1;
 
+  private headerService = inject(HeaderService);
   private warHubService = inject(WarHubService);
   private checkboxHubService = inject(CheckboxesHubService);
   private activatedRoute = inject(ActivatedRoute);
@@ -57,27 +62,48 @@ export class WarComponent implements AfterViewInit, OnDestroy {
       });
   }
 
-  async ngAfterViewInit(): Promise<void> {
-    this.activatedRoute.paramMap.subscribe(async params => {
-      const id = params.get('id');
-      if (id) {
-        if (this.currentWarId >= 0) {
-          this.warHubService.unsubscribeToWar(this.currentWarId);
+  async ngOnInit(): Promise<void> {
+    this.router.events
+      .pipe(
+        filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+        takeUntil(this.ngUnsubscribe)
+      )
+      .subscribe(() => {
+        const id = this.activatedRoute?.snapshot.firstChild?.params['id'];
+        if (id) {
+          this.goToId(parseInt(id));
         }
+      });
 
-        this.currentWarId = parseInt(id);
-        if (this.currentWarId >= 0) {
-          this.warHubService.subscribeToWar(this.currentWarId);
-        }
-      } else {
-        // Load current war.
-        const currentWarId = await this.warHubService.getCurrentWar();
-        this.router.navigate(['War', currentWarId], { replaceUrl: true });
-      }
-    });
+    const id = this.activatedRoute?.snapshot.firstChild?.params['id'];
+    if (id) {
+      this.currentWarId = parseInt(id);
+    } else {
+      // Load current war.
+      const currentWarId = await this.warHubService.getCurrentWar();
+      this.router.navigate(['War', currentWarId], { replaceUrl: true });
+    }
+  }
+
+  async ngAfterViewInit(): Promise<void> {
+    // Set header template.
+    this.headerService.setHeader(this.headerTemplate);
+
+    if (this.currentWarId >= 0) {
+      this.goToId(this.currentWarId);
+    }
+  }
+
+  private goToId = (id: number): void => {
+    this.currentWarId = id;
+    if (this.currentWarId >= 0) {
+      this.warHubService.subscribeToWar(id);
+    }
   }
 
   ngOnDestroy() {
+    this.headerService.setHeader(null);
+
     if (this.currentWarId >= 0) {
       this.warHubService.unsubscribeToWar(this.currentWarId);
     }
@@ -92,8 +118,10 @@ export class WarComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  protected gotoCurrentWar = (): void => {
-    this.router.navigate(['War']);
+  protected gotoCurrentWar = async (): Promise<void> => {
+    // Load current war.
+    const currentWarId = await this.warHubService.getCurrentWar();
+    this.router.navigate(['War', currentWarId], { replaceUrl: true });
   }
 
   private warUpdated = (wars: Wars): void => {
@@ -122,7 +150,7 @@ export class WarComponent implements AfterViewInit, OnDestroy {
     }
 
     const stats = checkboxStatistics[war.warLocationId];
-    if (!stats){
+    if (!stats) {
       return;
     }
 

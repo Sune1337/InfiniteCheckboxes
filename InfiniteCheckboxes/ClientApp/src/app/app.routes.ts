@@ -3,9 +3,15 @@ import { Checkboxes } from './checkboxes/checkboxes';
 import { WarComponent } from './war/war';
 
 export const routes: Routes = [
-  { path: 'Checkboxes', component: Checkboxes, pathMatch: 'full' },
-  { path: 'Checkboxes/:id', component: Checkboxes, pathMatch: 'full' },
-  { path: 'War/:id', component: WarComponent, pathMatch: 'full' },
-  { path: 'War', component: WarComponent, pathMatch: 'full' },
+  {
+    path: 'Checkboxes', component: Checkboxes, children: [
+      { path: ':id', component: Checkboxes }
+    ]
+  },
+  {
+    path: 'War', component: WarComponent, children: [
+      { path: ':id', component: WarComponent }
+    ]
+  },
   { path: '**', redirectTo: 'Checkboxes', pathMatch: 'full' }
 ];
