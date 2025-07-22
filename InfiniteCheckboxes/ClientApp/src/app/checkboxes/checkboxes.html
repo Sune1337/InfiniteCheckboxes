@@ -1,23 +1,30 @@
 <ng-template #headerTemplate>
   <div class="header">
-    Width of grid:
-    <select [(ngModel)]="selectedPageWidth">
-      @for (width of pageWidths; track width) {
-        <option value="{{width}}">{{ width }}</option>
-      }
-    </select>
+    <div class="flex-container">
+      <div>
+        Grid size:
+        <select [(ngModel)]="selectedPageWidth">
+          @for (width of pageWidths; track width) {
+            <option value="{{width}}">{{ width }}</option>
+          }
+        </select>
+      </div>
 
-    Go to page:
-    <input [(ngModel)]="pageInput" type="text" (keydown)="whenPageInputKeyDown($event)">
-    <button (click)="whenSearchButtonClick()">Go</button>
-    <a href="javascript:void(0)" (click)="helpDialog.showModal()"><span class="help-link">?</span></a>
+      <div class="links">
+        <a href="javascript:void(0)" (click)="helpDialog.showModal()"><span class="help-link">?</span></a>
+        <a routerLink="/War" class="war-link">WAR</a>
+      </div>
 
-    <a routerLink="/War" class="war-link">WAR</a>
+      <div>
+        <input [(ngModel)]="pageInput" type="text" (keydown)="whenPageInputKeyDown($event)">
+        <button (click)="whenSearchButtonClick()">Go</button>
+      </div>
 
-    <p>
-      Number of checked: {{ numberOfChecked() ?? '...' }}
-      Your gold: {{ user()?.goldBalance ?? '...' }}
-    </p>
+      <div>
+        Number of checked: {{ numberOfChecked() ?? '...' }}
+        Your gold: {{ user()?.goldBalance ?? '...' }}
+      </div>
+    </div>
   </div>
 </ng-template>
 

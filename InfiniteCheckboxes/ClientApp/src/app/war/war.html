@@ -1,19 +1,28 @@
 <ng-template #headerTemplate>
   <div class="header">
-    Number of warriors: {{ numberOfPlayers() }} Checked: {{ war()?.numberOfChecked ?? '...' }} Unchecked {{ war()?.numberOfUnchecked ?? '...'  }}
-    <a href="javascript:void(0)" (click)="helpDialog.showModal()"><span class="help-link">?</span></a>
-    <a routerLink="/Checkboxes" class="war-link">Back</a>
+    <div class="flex-container">
+      <div>
+        Players: {{ numberOfPlayers() }}
+        <input type="checkbox" checked style="width: 16px; height: 16px;">: {{ war()?.numberOfChecked ?? '...' }}
+        <input type="checkbox" style="width: 16px; height: 16px;"> {{ war()?.numberOfUnchecked ?? '...' }}
+      </div>
 
-    @if (!war()?.startUtc) {
-      <p>A war is brewing! Make the first strike!</p>
-    } @else if (!war()?.endUtc) {
-      <p>The war is active! Good luck soldier.</p>
-    } @else {
-      <p>
-        The war ended at {{ war()?.endUtc | date:'y-MM-dd HH:mm' }}. {{ war()?.winningTeam == 0 ? 'Checkers' : 'Uncheckers' }} won!
-        <a href="javascript:void(0)" (click)="gotoCurrentWar()">Join the next war</a>
-      </p>
-    }
+      <div class="links">
+        <a href="javascript:void(0)" (click)="helpDialog.showModal()"><span class="help-link">?</span></a>
+        <a routerLink="/Checkboxes" class="war-link">Back</a>
+      </div>
+
+      <div>
+        @if (!war()?.startUtc) {
+          A war is brewing! Make the first strike!
+        } @else if (!war()?.endUtc) {
+          The war is active! Good luck soldier.
+        } @else {
+          This war has ended. {{ war()?.winningTeam == 0 ? 'Checkers' : 'Uncheckers' }} won!
+          <a href="javascript:void(0)" (click)="gotoCurrentWar()">Join the next war</a>
+        }
+      </div>
+    </div>
   </div>
 </ng-template>
 

@@ -1,3 +1,5 @@
+@use "./header.scss";
+
 :root {
   color-scheme: light dark;
 }
@@ -19,13 +21,12 @@ input, select {
 }
 
 span.help-link {
-  display: inline-flex;  /* for better centering */
-  align-items: center;   /* vertical center */
+  display: inline-flex; /* for better centering */
+  align-items: center; /* vertical center */
   justify-content: center; /* horizontal center */
-  width: 24px;          /* fixed width */
-  height: 24px;         /* fixed height - same as width for circle */
+  width: 24px; /* fixed width */
+  height: 24px; /* fixed height - same as width for circle */
   border: 2px solid;
   border-radius: 50%;
-  margin-left: 1rem;
   margin-top: -10px;
 }

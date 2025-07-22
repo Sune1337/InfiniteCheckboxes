@@ -15,7 +15,6 @@ import { HeaderService } from '../../utils/header.service';
   imports: [
     CheckboxGrid,
     ReactiveFormsModule,
-    DatePipe,
     RouterLink
   ],
   templateUrl: './war.html',
