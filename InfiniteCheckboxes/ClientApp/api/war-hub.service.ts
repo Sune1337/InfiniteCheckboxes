@@ -3,8 +3,8 @@ import { first, Observable, shareReplay, Subject, Subscription, timer } from "rx
 import { HubConnection, HubConnectionBuilder, RetryContext } from "@microsoft/signalr";
 import { HubStatus, HubStatusService } from './hub-status.service';
 import { War } from './models/war';
-import { UserService } from '../src/services/user-service';
 import { createTrackedSubject } from '../utils/tracked-subject';
+import { getLocalUserId } from '../src/utils/user-utils';
 
 export type Wars = { [id: number]: War };
 
@@ -22,7 +22,6 @@ export class WarHubService {
   private privateWars: Wars = {};
 
   private hubStatusService = inject(HubStatusService);
-  private userService = inject(UserService);
 
   constructor() {
     // Create observable to trigger connecting to hub.
@@ -162,7 +161,7 @@ export class WarHubService {
 
         // Connect to hub.
         const hubConnection = new HubConnectionBuilder()
-          .withUrl('/hubs/v1/WarHub', { accessTokenFactory: this.userService.getUserId })
+          .withUrl('/hubs/v1/WarHub', { accessTokenFactory: getLocalUserId })
           .withAutomaticReconnect({
             // Retry connecting to hub until the observable is unsubscribed.
             nextRetryDelayInMilliseconds(retryContext: RetryContext): number | null {

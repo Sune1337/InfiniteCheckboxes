@@ -6,7 +6,7 @@ import { filter, Subject, takeUntil } from 'rxjs';
 import { CheckboxGrid } from '../checkbox-grid/checkbox-grid';
 import { CheckboxesHubService } from '../../../api/checkboxes-hub.service';
 import { HeaderService } from '../../utils/header.service';
-import { User } from '../../../api/models/user';
+import { UserBalance } from '../../../api/models/user-balance';
 
 @Component({
   selector: 'app-checkboxes',
@@ -25,7 +25,7 @@ export class Checkboxes implements OnInit, AfterViewInit, OnDestroy {
   protected selectedPageWidth = signal<number>(this.pageWidths[0]);
   protected pageInput = signal<string>('');
   protected numberOfChecked = signal<number | null>(null);
-  protected user = signal<User | null>(null)
+  protected user = signal<UserBalance | null>(null)
 
   @ViewChild(CheckboxGrid)
   private checkboxGrid!: CheckboxGrid;

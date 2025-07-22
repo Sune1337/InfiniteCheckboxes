@@ -2,13 +2,13 @@ import { inject, Injectable } from '@angular/core';
 import { first, Observable, ReplaySubject, shareReplay, Subject, Subscription, timer } from "rxjs";
 import { HubConnection, HubConnectionBuilder, RetryContext } from "@microsoft/signalr";
 import { HubStatus, HubStatusService } from './hub-status.service';
-import { UserService } from '../src/services/user-service';
 import { decompressBitArray } from '../utils/decompress';
 import { base64ToHexString, base64ToUint8Array, bigIntToBase64, bigIntToHexString } from '../utils/bigint-utils';
 import { CheckboxStatistics } from './models/checkbox-statistics';
 import { GlobalStatistics } from './models/GlobalStatistics';
-import { User } from './models/user';
+import { UserBalance } from './models/user-balance';
 import { createTrackedSubject } from '../utils/tracked-subject';
+import { getLocalUserId } from '../src/utils/user-utils';
 
 export type CheckboxPages = { [id: string]: boolean[] };
 export type GoldSpots = { [id: string]: number[] };
@@ -23,7 +23,7 @@ export class CheckboxesHubService {
   public goldSpots: Subject<GoldSpots>;
   public checkboxStatistics: Subject<CheckboxPageStatistics>;
   public globalStatistics: Subject<GlobalStatistics>;
-  public user: Subject<User>;
+  public user: Subject<UserBalance>;
 
   private subjectSubscribers = 0;
   private hubConnectionObservable: Observable<HubConnection>;
@@ -34,7 +34,6 @@ export class CheckboxesHubService {
   private privateCheckboxPageStatistics: CheckboxPageStatistics = {};
 
   private hubStatusService = inject(HubStatusService);
-  private userService = inject(UserService);
 
   constructor() {
     // Create observable to trigger connecting to hub.
@@ -45,7 +44,7 @@ export class CheckboxesHubService {
     this.goldSpots = createTrackedSubject(() => new Subject<GoldSpots>(), this.whenSubscribed, this.whenUnsubscribed);
     this.checkboxStatistics = createTrackedSubject(() => new Subject<CheckboxPageStatistics>(), this.whenSubscribed, this.whenUnsubscribed);
     this.globalStatistics = createTrackedSubject(() => new ReplaySubject<GlobalStatistics>(1), this.whenSubscribed, this.whenUnsubscribed);
-    this.user = createTrackedSubject(() => new ReplaySubject<User>(1), this.whenSubscribed, this.whenUnsubscribed);
+    this.user = createTrackedSubject(() => new ReplaySubject<UserBalance>(1), this.whenSubscribed, this.whenUnsubscribed);
   }
 
   public subscribeToCheckboxPage = (id: bigint): void => {
@@ -193,9 +192,9 @@ export class CheckboxesHubService {
       });
     });
 
-    // Listen for user updates.
-    hubConnection.on(`User`, (user: User) => {
-      this.user.next(user);
+    // Listen for user-balance updates.
+    hubConnection.on(`UB`, (userBalance: UserBalance) => {
+      this.user.next(userBalance);
     });
   }
 
@@ -215,7 +214,7 @@ export class CheckboxesHubService {
 
         // Connect to hub.
         const hubConnection = new HubConnectionBuilder()
-          .withUrl('/hubs/v1/CheckboxHub', { accessTokenFactory: this.userService.getUserId })
+          .withUrl('/hubs/v1/CheckboxHub', { accessTokenFactory: getLocalUserId })
           .withAutomaticReconnect({
             // Retry connecting to hub until the observable is unsubscribed.
             nextRetryDelayInMilliseconds(retryContext: RetryContext): number | null {

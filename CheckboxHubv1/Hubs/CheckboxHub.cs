@@ -125,7 +125,7 @@ public class CheckboxHub : Hub
         // Get the current user to seed client.
         var userGrain = _grainFactory.GetGrain<IUserGrain>(userId);
         var user = await userGrain.GetUser();
-        await Clients.Caller.SendAsync("User", user);
+        await Clients.Caller.SendAsync("UB", new { user.GoldBalance });
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)

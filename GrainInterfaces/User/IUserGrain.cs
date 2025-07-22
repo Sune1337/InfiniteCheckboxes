@@ -8,6 +8,7 @@ public interface IUserGrain : IGrainWithStringKey
 
     public Task AddGold(int amount);
     public Task<User> GetUser();
+    public Task SetUserName(string? userName);
 
     #endregion
 }

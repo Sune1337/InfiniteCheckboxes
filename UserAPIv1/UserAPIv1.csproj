@@ -5,11 +5,15 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <OutputType>Library</OutputType>
-        <RootNamespace>APIKeyAuthentication</RootNamespace>
+        <RootNamespace>UserAPI</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Two56BitId\Two56BitId.csproj"/>
+        <PackageReference Include="Microsoft.Orleans.Sdk" Version="9.2.1"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\GrainInterfaces\GrainInterfaces.csproj"/>
     </ItemGroup>
 
 </Project>

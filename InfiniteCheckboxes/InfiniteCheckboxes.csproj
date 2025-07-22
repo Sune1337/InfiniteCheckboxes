@@ -9,26 +9,27 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Content Include="..\.dockerignore">
-        <Link>.dockerignore</Link>
-      </Content>
+        <Content Include="..\.dockerignore">
+            <Link>.dockerignore</Link>
+        </Content>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\APIKeyAuthentication\APIKeyAuthentication.csproj" />
-      <ProjectReference Include="..\CheckboxHubv1\CheckboxHubv1.csproj" />
-      <ProjectReference Include="..\WarHubv1\WarHubv1.csproj" />
+        <ProjectReference Include="..\APIKeyAuthentication\APIKeyAuthentication.csproj"/>
+        <ProjectReference Include="..\CheckboxHubv1\CheckboxHubv1.csproj"/>
+        <ProjectReference Include="..\UserAPIv1\UserAPIv1.csproj"/>
+        <ProjectReference Include="..\WarHubv1\WarHubv1.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Microsoft.Orleans.Client" Version="9.2.1" />
-      <PackageReference Include="Microsoft.Orleans.Runtime" Version="9.2.1" />
-      <PackageReference Include="OpenTelemetry" Version="1.12.0" />
-      <PackageReference Include="Orleans.Providers.MongoDB" Version="9.1.0" />
-      <PackageReference Include="prometheus-net" Version="8.2.1" />
-      <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
-      <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
-      <PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="8.3.1" />
+        <PackageReference Include="Microsoft.Orleans.Client" Version="9.2.1"/>
+        <PackageReference Include="Microsoft.Orleans.Runtime" Version="9.2.1"/>
+        <PackageReference Include="OpenTelemetry" Version="1.12.0"/>
+        <PackageReference Include="Orleans.Providers.MongoDB" Version="9.1.0"/>
+        <PackageReference Include="prometheus-net" Version="8.2.1"/>
+        <PackageReference Include="Serilog.AspNetCore" Version="9.0.0"/>
+        <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1"/>
+        <PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="8.3.1"/>
     </ItemGroup>
 
     <Target Name="PublishRunWebpack" AfterTargets="ComputeFilesToPublish">

@@ -1,10 +1,8 @@
-namespace UserGrain.Models;
+namespace UserAPI.Models;
 
-public class UserState
+public class UserDetails
 {
     #region Public Properties
-
-    public int GoldBalance { get; set; }
 
     public string? UserName { get; set; }
 

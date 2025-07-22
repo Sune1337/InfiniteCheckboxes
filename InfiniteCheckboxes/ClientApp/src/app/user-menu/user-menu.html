@@ -1,0 +1,42 @@
+<button cdkOverlayOrigin #trigger="cdkOverlayOrigin" class="hamburger-button" (click)="isMenuOpen = !isMenuOpen">
+  <span class="hamburger-line"></span>
+  <span class="hamburger-line"></span>
+  <span class="hamburger-line"></span>
+</button>
+
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayOrigin]="trigger"
+  [cdkConnectedOverlayOpen]="isMenuOpen"
+  [cdkConnectedOverlayHasBackdrop]="true"
+  (backdropClick)="isMenuOpen = false"
+>
+  <div class="user-popup">
+    @if (localUser(); as localUser) {
+      <p>
+        The account-details are used to track your progress. It will be lost if you clear the browser cache.
+        If you want to use it in another browser, save it somewhere so you can copy-paste it there.
+      </p>
+      <p>
+        Your username can be displayed to other users.
+      </p>
+      <p>
+      <table>
+        <tr>
+          <td>UserId</td>
+          <td><input type="text" [(ngModel)]="localUser.userId"></td>
+        </tr>
+        <tr>
+          <td>Username</td>
+          <td><input type="text" [(ngModel)]="localUser.userName"></td>
+        </tr>
+      </table>
+      <p>
+        <button (click)="whenSaveButtonClick()">Save and reload page</button>
+      </p>
+    } @else {
+      <p>You are not logged in.</p>
+    }
+  </div>
+</ng-template>
+

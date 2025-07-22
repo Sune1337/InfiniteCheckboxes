@@ -6,6 +6,9 @@ public class User
     #region Do not reorder
 
     [Id(0)]
+    public string? UserName { get; set; }
+
+    [Id(1)]
     public int GoldBalance { get; set; }
 
     #endregion

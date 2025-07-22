@@ -1,29 +1,38 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
+import { LocalUser } from './models/local-user';
+import { UserApiService } from '../../api/user-api.service';
+import { getLocalUser, setLocalUser } from '../utils/user-utils';
+import { ReplaySubject } from 'rxjs';
+import { UserDetails } from '../../api/models/user-details';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserService {
-  public getUserId = (): string => {
-    let userId = localStorage.getItem('userId');
-    if (!userId) {
-      userId = this.generateUserId();
-      localStorage.setItem('userId', userId);
-    }
 
-    return userId;
+  public localUser = new ReplaySubject<LocalUser>(1);
+
+  private userApiService = inject(UserApiService);
+  private _localUser: LocalUser;
+
+  constructor() {
+    this._localUser = getLocalUser()
+    this.localUser.next(this._localUser);
+
+    // Update user-details from server.
+    this.userApiService
+      .getUserDetails()
+      .then(userDetails => {
+        this._localUser = { ...this._localUser, ...userDetails };
+        setLocalUser(this._localUser);
+        this.localUser.next(this._localUser);
+      });
   }
 
-  private generateUserId = () => {
-    // Create an array of 32 bytes (256 bits)
-    const array = new Uint8Array(32);
-
-    // Fill it with cryptographically secure random values
-    crypto.getRandomValues(array);
-
-    // Convert to hex string
-    return Array.from(array)
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
+  public setUserDetails = (userDetails: UserDetails): Promise<void> => {
+    // Update server with new user-details.
+    return this.userApiService
+      .setUserDetails(userDetails);
   }
+
 }

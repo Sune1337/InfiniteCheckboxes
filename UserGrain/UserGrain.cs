@@ -51,6 +51,12 @@ public class UserGrain : Grain, IUserGrain
         return Task.CompletedTask;
     }
 
+    public async Task SetUserName(string? userName)
+    {
+        _userState.State.UserName = userName;
+        await _userState.WriteStateAsync();
+    }
+
     #endregion
 
     #region Methods
@@ -59,6 +65,7 @@ public class UserGrain : Grain, IUserGrain
     {
         return new User
         {
+            UserName = _userState.State.UserName,
             GoldBalance = _userState.State.GoldBalance
         };
     }

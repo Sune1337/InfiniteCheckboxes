@@ -2,21 +2,16 @@ namespace APIKeyAuthentication;
 
 using System.Security.Claims;
 using System.Text.Encodings.Web;
-using System.Text.RegularExpressions;
 
 using APIKeyAuthentication.Options;
 
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 
+using Two56bitId;
+
 public partial class APIKeyAuthenticationHandler : AuthenticationHandler<APIKeyAuthenticationOptions>
 {
-    #region Static Fields
-
-    private static readonly Regex Two56BitHexStringRegex = Two56BitHexStringRegexFunc();
-
-    #endregion
-
     #region Constructors and Destructors
 
     public APIKeyAuthenticationHandler(IOptionsMonitor<APIKeyAuthenticationOptions> options, ILoggerFactory logger, UrlEncoder encoder) : base(options, logger, encoder)
@@ -51,7 +46,7 @@ public partial class APIKeyAuthenticationHandler : AuthenticationHandler<APIKeyA
             apiKey = apiKeyHeaderValue.ToString();
         }
 
-        if (string.IsNullOrEmpty(apiKey) || !Two56BitHexStringRegex.IsMatch(apiKey))
+        if (apiKey == null || !apiKey.Validate256BitHex())
         {
             return Task.FromResult(AuthenticateResult.NoResult());
         }
@@ -71,9 +66,6 @@ public partial class APIKeyAuthenticationHandler : AuthenticationHandler<APIKeyA
         // Pass on the ticket to the middleware
         return Task.FromResult(AuthenticateResult.Success(ticket));
     }
-
-    [GeneratedRegex("^[0-9a-fA-F]{1,64}$")]
-    private static partial Regex Two56BitHexStringRegexFunc();
 
     #endregion
 }

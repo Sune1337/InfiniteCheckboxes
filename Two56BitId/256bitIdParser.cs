@@ -1,7 +1,15 @@
 namespace Two56bitId;
 
-public static class Two56BitIdParser
+using System.Text.RegularExpressions;
+
+public static partial class Two56BitIdParser
 {
+    #region Static Fields
+
+    private static readonly Regex Two56BitHexStringRegex = Two56BitHexStringRegexFunc();
+
+    #endregion
+
     #region Public Methods and Operators
 
     /// <summary>
@@ -94,6 +102,11 @@ public static class Two56BitIdParser
         }
     }
 
+    public static bool Validate256BitHex(this string? hexString)
+    {
+        return hexString != null && Two56BitHexStringRegex.IsMatch(hexString);
+    }
+
     #endregion
 
     #region Methods
@@ -103,6 +116,9 @@ public static class Two56BitIdParser
         var val = (int)hex;
         return val - (val < 58 ? 48 : (val < 97 ? 55 : 87));
     }
+
+    [GeneratedRegex("^[0-9a-fA-F]{1,64}$")]
+    private static partial Regex Two56BitHexStringRegexFunc();
 
     #endregion
 }

@@ -91,7 +91,7 @@ public class UserObserverService : IHostedService, IUserObserverManager
                     {
                         await _checkboxHubContext.Clients
                             .Group($"{HubGroups.UserGroupPrefix}_{id}")
-                            .SendAsync("User", value);
+                            .SendAsync("UB", new { value.GoldBalance });
                     }
                 };
                 _subscriptions.Add(id, userUpdates);
