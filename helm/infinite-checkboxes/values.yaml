@@ -32,7 +32,7 @@ images:
   webapp:
     replicaCount: 1
     repository: webapp
-    tag: 1.0.35
+    tag: 1.0.36
     pullPolicy: IfNotPresent
     metricsServerPort:
     useSerilogRequestLogging: false

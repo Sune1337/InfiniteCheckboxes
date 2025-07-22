@@ -61,7 +61,7 @@ export class CheckboxGrid implements OnDestroy {
       .subscribe(goldSpots => this.goldSpotsUpdated(goldSpots));
 
     // Handle changes to page-width.
-    effect(() => this.whenPageWidthChange());
+    effect(() => this.whenPageWidthChange(this.gridWidth()));
   }
 
   ngOnDestroy() {
@@ -197,24 +197,25 @@ export class CheckboxGrid implements OnDestroy {
     this.checkBoxPages.set(checkboxPages);
   }
 
-  private whenPageWidthChange = () => {
+  private whenPageWidthChange = (gridWidth: number) => {
     if (!this.viewport) {
       return;
     }
 
     const oldItemSize = 4096 / this.lastWidth * this.rowHeight;
-    const oldScrollOffset = this.viewport.measureScrollOffset();
-    const noItems = oldScrollOffset / oldItemSize;
-    let newScrollOffset = noItems * this.itemSize();
-    this.lastWidth = this.gridWidth();
+    const itemIndexAtTop = this.viewport.measureScrollOffset() / oldItemSize;
+    const newScrollOffset = itemIndexAtTop * this.itemSize();
+    const currentContentSize = this.viewport.getDataLength() * oldItemSize;
+    this.lastWidth = gridWidth;
 
-    this.viewport.scrollTo({ top: newScrollOffset });
-    setTimeout(() => {
+    if (newScrollOffset + this.viewport.getViewportSize() < currentContentSize) {
       this.viewport.scrollTo({ top: newScrollOffset });
-
-      // Tell viewport to update its size cache
-      this.viewport.checkViewportSize();
-    });
+    } else {
+      // We want to scroll further down than can currently be rendered. Must let the scroll-viewport re-render.
+      setTimeout(() => {
+        this.viewport.scrollTo({ top: newScrollOffset });
+      });
+    }
   }
 
   private addItemsAtEnd() {
