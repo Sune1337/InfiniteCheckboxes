@@ -1,0 +1,31 @@
+/* Style the buttons that are used to open and close the panels */
+.accordion {
+  cursor: pointer;
+  padding: 18px;
+  width: 100%;
+  text-align: left;
+  border: none;
+  outline: none;
+  font-size: 1rem;
+  background-color: #eca1a1;
+  color: black;
+  transition: 0.2s;
+
+  /* Add a background color to the button if it is clicked on and when you hover it */
+  &.active, &:hover {
+    background-color: #ce3636;
+    color: #e8e8e8;
+  }
+}
+
+/* Style the accordion panel. */
+.panel {
+  padding: 0 18px;
+  overflow: hidden;
+  transition: max-height 0.2s ease-out;
+
+  &.active {
+    max-height: inherit;
+    transition: max-height 0.2s ease-out;
+  }
+}

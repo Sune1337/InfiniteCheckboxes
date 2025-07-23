@@ -1,7 +1,6 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit, signal, TemplateRef, ViewChild } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { Meta, Title } from '@angular/platform-browser';
-import { ActivatedRoute, NavigationEnd, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { ReactiveFormsModule } from "@angular/forms";
 import { filter, Subject, takeUntil } from 'rxjs';
 import { WarHubService, Wars } from '../../../api/war-hub.service';
@@ -14,8 +13,7 @@ import { HeaderService } from '../../utils/header.service';
   selector: 'app-war',
   imports: [
     CheckboxGrid,
-    ReactiveFormsModule,
-    RouterLink
+    ReactiveFormsModule
   ],
   templateUrl: './war.html',
   styleUrl: './war.scss',

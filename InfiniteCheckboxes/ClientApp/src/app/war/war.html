@@ -2,14 +2,13 @@
   <div class="header">
     <div class="flex-container">
       <div>
+        <a href="javascript:void(0)" (click)="helpDialog.showModal()"><span class="help-link">?</span></a>
+      </div>
+
+      <div>
         Players: {{ numberOfPlayers() }}
         <input type="checkbox" checked style="width: 16px; height: 16px;">: {{ war()?.numberOfChecked ?? '...' }}
         <input type="checkbox" style="width: 16px; height: 16px;"> {{ war()?.numberOfUnchecked ?? '...' }}
-      </div>
-
-      <div class="links">
-        <a href="javascript:void(0)" (click)="helpDialog.showModal()"><span class="help-link">?</span></a>
-        <a routerLink="/Checkboxes" class="war-link">Back</a>
       </div>
 
       <div>

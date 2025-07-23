@@ -2,17 +2,16 @@
   <div class="header">
     <div class="flex-container">
       <div>
+        <a href="javascript:void(0)" (click)="helpDialog.showModal()"><span class="help-link">?</span></a>
+      </div>
+
+      <div>
         Grid size:
         <select [(ngModel)]="selectedPageWidth">
           @for (width of pageWidths; track width) {
             <option value="{{width}}">{{ width }}</option>
           }
         </select>
-      </div>
-
-      <div class="links">
-        <a href="javascript:void(0)" (click)="helpDialog.showModal()"><span class="help-link">?</span></a>
-        <a routerLink="/War" class="war-link">WAR</a>
       </div>
 
       <div>

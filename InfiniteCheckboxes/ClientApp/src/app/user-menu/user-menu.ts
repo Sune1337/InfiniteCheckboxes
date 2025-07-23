@@ -5,13 +5,19 @@ import { Subject, takeUntil } from 'rxjs';
 import { UserService } from '../../services/user-service';
 import { LocalUser } from '../../services/models/local-user';
 import { setLocalUser } from '../../utils/user-utils';
+import { RouterLink } from '@angular/router';
+import { Accordion } from './accordion/accordion';
+import { AccordionPanel } from './accordion/accordion-panel/accordion-panel';
 
 @Component({
   selector: 'app-user-menu',
   imports: [
     CdkOverlayOrigin,
     CdkConnectedOverlay,
-    FormsModule
+    FormsModule,
+    RouterLink,
+    Accordion,
+    AccordionPanel
   ],
   templateUrl: './user-menu.html',
   styleUrl: './user-menu.scss',

@@ -1,7 +1,7 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit, signal, TemplateRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Meta, Title } from '@angular/platform-browser';
-import { ActivatedRoute, NavigationEnd, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { filter, Subject, takeUntil } from 'rxjs';
 import { CheckboxGrid } from '../checkbox-grid/checkbox-grid';
 import { CheckboxesHubService } from '../../../api/checkboxes-hub.service';
@@ -14,8 +14,7 @@ import { UserBalance } from '../../../api/models/user-balance';
   styleUrl: './checkboxes.scss',
   imports: [
     FormsModule,
-    CheckboxGrid,
-    RouterLink
+    CheckboxGrid
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
