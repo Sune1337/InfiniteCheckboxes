@@ -74,7 +74,14 @@ export class CheckboxGrid implements OnDestroy {
   }
 
   public navigateToPage = async (id: string): Promise<void> => {
-    const pageId = await this.parseStringToBigInt(id);
+    let pageId: bigint;
+    try {
+      pageId = await this.parseStringToBigInt(id);
+    } catch (error: any) {
+      alert(error.message);
+      return;
+    }
+
     const existingPage = this.checkBoxPages()?.find(p => p.pageId === pageId);
     this.checkBoxPages.set([existingPage ?? this.createCheckboxPage(pageId)]);
 
@@ -271,22 +278,30 @@ export class CheckboxGrid implements OnDestroy {
   }
 
   private async parseStringToBigInt(input: string): Promise<bigint> {
-    // Check if string contains only digits
+    let id: bigint;
+
     if (/^\d+$/.test(input)) {
-      return BigInt(input);
+      // String contains only digits.
+      id = BigInt(input);
+    } else if (/^0x[0-9a-fA-F]+$/.test(input)) {
+      // Check if it's a hex number starting with 0x
+      id = BigInt(input);
+    } else {
+      // Otherwise, calculate SHA256 hash and convert to BigInt
+      const encoder = new TextEncoder();
+      const data = encoder.encode(input);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      id = BigInt('0x' + hashHex);
     }
 
-    // Check if it's a hex number starting with 0x
-    if (/^0x[0-9a-fA-F]+$/.test(input)) {
-      return BigInt(input);
+    if (id < this.MinPageId) {
+      throw new Error(`Page id is too small.`);
+    } else if (id > this.MaxPageId) {
+      throw new Error('Page id is too large.');
     }
 
-    // Otherwise, calculate SHA256 hash and convert to BigInt
-    const encoder = new TextEncoder();
-    const data = encoder.encode(input);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    return BigInt('0x' + hashHex);
+    return id;
   }
 }
