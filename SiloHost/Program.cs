@@ -89,6 +89,11 @@ var builder = Host.CreateDefaultBuilder(args)
                 options.DatabaseName = "UserGrains";
                 options.CreateShardKeyForCosmos = false;
             })
+            .AddMongoDBGrainStorage("HighscoreStore", options =>
+            {
+                options.DatabaseName = "HighscoreGrains";
+                options.CreateShardKeyForCosmos = false;
+            })
             .ConfigureEndpoints(TcpPorts.GetNextFreeTcpPort(11111), TcpPorts.GetNextFreeTcpPort(30000))
             .UseDashboard(options => { });
 

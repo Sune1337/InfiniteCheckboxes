@@ -2,6 +2,8 @@ namespace UserGrain;
 
 using global::UserGrain.Models;
 
+using GrainInterfaces.Highscore;
+using GrainInterfaces.Statistics;
 using GrainInterfaces.User;
 using GrainInterfaces.User.Models;
 
@@ -33,6 +35,26 @@ public class UserGrain : Grain, IUserGrain
     #endregion
 
     #region Public Methods and Operators
+
+    public async Task AddCheckUncheck(int countChecked, int countUnchecked)
+    {
+        _userState.State.CountChecked += (ulong)countChecked;
+        _userState.State.CountUnchecked += (ulong)countUnchecked;
+        await _userState.WriteStateAsync();
+
+        var checkedHighscoreGrain = GrainFactory.GetGrain<IHighscoreCollectorGrain>(HighscoreLists.Checked);
+        var uncheckedHighscoreGrain = GrainFactory.GetGrain<IHighscoreCollectorGrain>(HighscoreLists.Unchecked);
+        var checkUncheckCounter = GrainFactory.GetGrain<ICheckUncheckCounter>(0);
+
+        await Task.WhenAll(
+            // Update user highscore.
+            checkedHighscoreGrain.UpdateScore(_grainId, _userState.State.CountChecked),
+            uncheckedHighscoreGrain.UpdateScore(_grainId, _userState.State.CountUnchecked),
+
+            // Update global statistics.
+            checkUncheckCounter.AddCheckUncheck(countChecked, countUnchecked)
+        );
+    }
 
     public async Task AddGold(int amount)
     {
