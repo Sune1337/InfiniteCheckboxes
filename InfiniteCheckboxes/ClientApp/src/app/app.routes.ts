@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { Checkboxes } from './checkboxes/checkboxes';
 import { WarComponent } from './war/war';
+import { About } from './about/about';
 
 export const routes: Routes = [
   {
@@ -13,5 +14,6 @@ export const routes: Routes = [
       { path: ':id', component: WarComponent }
     ]
   },
+  { path: 'About', component: About },
   { path: '**', redirectTo: 'Checkboxes', pathMatch: 'full' }
 ];

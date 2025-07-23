@@ -2,17 +2,18 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://infinitecheckbox.es/</loc>
-    <lastmod>2025-07-18T16:35:13+00:00</lastmod>
     <changefreq>always</changefreq>
   </url>
   <url>
     <loc>https://infinitecheckbox.es/Checkboxes</loc>
-    <lastmod>2025-07-18T16:35:13+00:00</lastmod>
     <changefreq>always</changefreq>
   </url>
   <url>
     <loc>https://infinitecheckbox.es/War</loc>
-    <lastmod>2025-07-18T16:35:13+00:00</lastmod>
     <changefreq>always</changefreq>
+  </url>
+  <url>
+    <loc>https://infinitecheckbox.es/About</loc>
+    <changefreq>weekly</changefreq>
   </url>
 </urlset>

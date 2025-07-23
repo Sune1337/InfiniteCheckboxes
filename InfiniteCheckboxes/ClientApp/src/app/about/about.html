@@ -1,0 +1,59 @@
+<ng-template #headerTemplate>
+  <div class="header">
+    <h1>Infinite checkboxes</h1>
+  </div>
+</ng-template>
+
+<div class="page-container">
+  <div class="content">
+    <section>
+      <h2>What is it?</h2>
+      <p>
+        I have been wanting to experiment with writing distributed systems for a while.
+        Inspired by 'onemillioncheckboxes' I found it a good example to use.
+        But to add some complexity and justify a distributed system I decided to make it a bit bigger; so this version manages 2^256 * 4096 checkboxes!
+      </p>
+    </section>
+
+    <section>
+      <h2>Functionality</h2>
+      <h3>Check and uncheck</h3>
+      <p>
+        Well it's all about checking or unchecking boxes. There's a global counter that keeps track of the total number of checked boxes.
+        Let's see if we can beat 'onemillioncheckboxes'!
+      </p>
+
+      <h3>Gold-digger</h3>
+      <p>
+        Hidden through out the site there's gold! When you find gold your user gets credited and of course you want as much gold as possible!
+        Can you be #1 on the high-score list?
+      </p>
+
+      <h3>WAR!</h3>
+      <p>
+        This is a mini-game with a smaller map. (8x8 checkboxes). Compete with all other visitors to either check or uncheck all boxes.
+        Since it's a small map there's actually a possibility to finish :)
+      </p>
+    </section>
+
+    <section>
+      <h2>Tech-stack</h2>
+      <p>
+        Being a long-time .Net developer I've had my eyes on Orleans.Net for a while but only used it without it's cluster-capabilities.
+        Orleans.Net is a virtual actor framework and that's a good fit to manage more data than possible.
+        None the 2^256 pages of checkboxes actually exist until someone makes a change to them.
+      </p>
+
+      <ul>
+        <li>.Net 9</li>
+        <li>Orleans.net - cluster framework</li>
+        <li>Redis - Manages pub/sub</li>
+        <li>SignalR - Realtime communication with clients</li>
+        <li>MongoDB - DB used to store state</li>
+        <li>Angular - UI framework</li>
+      </ul>
+
+      Everything is deployed to a Kubernetes cluster.
+    </section>
+  </div>
+</div>
