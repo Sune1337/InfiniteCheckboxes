@@ -38,6 +38,12 @@ public static class SerilogRequestLoggingExtensions
                     {
                         diagnosticContext.Set("X-Forwarded-For", xForwardedFor);
                     }
+
+                    var referer = httpContext.Request.Headers["Referer"].ToString();
+                    if (string.IsNullOrEmpty(referer) == false)
+                    {
+                        diagnosticContext.Set("Referer", referer);
+                    }
                 };
             });
     }
