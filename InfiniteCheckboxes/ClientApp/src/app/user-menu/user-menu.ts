@@ -8,6 +8,7 @@ import { setLocalUser } from '../../utils/user-utils';
 import { RouterLink } from '@angular/router';
 import { Accordion } from './accordion/accordion';
 import { AccordionPanel } from './accordion/accordion-panel/accordion-panel';
+import { Top10Highscore } from './top10-highscore/top10-highscore';
 
 @Component({
   selector: 'app-user-menu',
@@ -17,7 +18,8 @@ import { AccordionPanel } from './accordion/accordion-panel/accordion-panel';
     FormsModule,
     RouterLink,
     Accordion,
-    AccordionPanel
+    AccordionPanel,
+    Top10Highscore
   ],
   templateUrl: './user-menu.html',
   styleUrl: './user-menu.scss',

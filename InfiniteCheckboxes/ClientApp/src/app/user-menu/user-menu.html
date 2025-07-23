@@ -33,6 +33,12 @@
         </nav>
       </app-accordion-panel>
 
+      <app-accordion-panel title="Highscore">
+        <div class="top10-container">
+          <app-top10-highscore></app-top10-highscore>
+        </div>
+      </app-accordion-panel>
+
       <app-accordion-panel title="User details">
         @if (localUser(); as localUser) {
           <p>

@@ -17,11 +17,13 @@
     <ItemGroup>
         <ProjectReference Include="..\APIKeyAuthentication\APIKeyAuthentication.csproj"/>
         <ProjectReference Include="..\CheckboxHubv1\CheckboxHubv1.csproj"/>
+        <ProjectReference Include="..\HighscoreAPIv1\HighscoreAPIv1.csproj" />
         <ProjectReference Include="..\UserAPIv1\UserAPIv1.csproj"/>
         <ProjectReference Include="..\WarHubv1\WarHubv1.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="LazyCache.AspNetCore" Version="2.4.0" />
         <PackageReference Include="Microsoft.Orleans.Client" Version="9.2.1"/>
         <PackageReference Include="Microsoft.Orleans.Runtime" Version="9.2.1"/>
         <PackageReference Include="OpenTelemetry" Version="1.12.0"/>

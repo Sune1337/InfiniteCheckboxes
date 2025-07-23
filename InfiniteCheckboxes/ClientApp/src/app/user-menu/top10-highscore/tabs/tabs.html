@@ -1,0 +1,9 @@
+<div class="tab">
+  @for (tab of tabs; track tab) {
+    <button [class.active]="tab.active()" (click)="openTab(tab)">{{ tab.title() }}</button>
+  }
+</div>
+
+<div class="tab-content">
+  <ng-content></ng-content>
+</div>

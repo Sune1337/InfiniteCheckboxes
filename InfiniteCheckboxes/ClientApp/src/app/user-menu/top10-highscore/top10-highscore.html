@@ -1,0 +1,43 @@
+<app-tabs>
+  <app-tab title="Checkers">
+    <div class="top10-container">
+      @if (checkersHighscore(); as highscore) {
+        <table class="highscore-table">
+          <colgroup>
+            <col style="width: auto">
+            <col style="width: 5rem">
+          </colgroup>
+          @for (score of highscore.scores; track score) {
+            <tr>
+              <td>{{ score.username }}</td>
+              <td>{{ score.score }}</td>
+            </tr>
+          }
+        </table>
+      } @else {
+        Loading highscores...
+      }
+    </div>
+  </app-tab>
+
+  <app-tab title="Uncheckers">
+    <div class="top10-container">
+      @if (uncheckersHighscore(); as highscore) {
+        <table class="highscore-table">
+          <colgroup>
+            <col style="width: auto">
+            <col style="width: 5rem">
+          </colgroup>
+          @for (score of highscore.scores; track score) {
+            <tr>
+              <td>{{ score.username }}</td>
+              <td>{{ score.score }}</td>
+            </tr>
+          }
+        </table>
+      } @else {
+        Loading highscores...
+      }
+    </div>
+  </app-tab>
+</app-tabs>

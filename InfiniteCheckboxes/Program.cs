@@ -62,6 +62,7 @@ builder.Services.AddDefaultExceptionHandler();
 builder.Services.AddCheckboxServices();
 builder.Services.AddWarObserverService();
 builder.Services.AddHsts(options => { options.MaxAge = TimeSpan.FromDays(365); });
+builder.Services.AddLazyCache();
 
 var app = builder.Build();
 

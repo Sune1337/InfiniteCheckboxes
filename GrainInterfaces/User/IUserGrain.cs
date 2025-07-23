@@ -9,6 +9,7 @@ public interface IUserGrain : IGrainWithStringKey
     public Task AddCheckUncheck(int countChecked, int countUnchecked);
     public Task AddGold(int amount);
     public Task<User> GetUser();
+    public Task<string?> GetUserName();
     public Task SetUserName(string? userName);
 
     #endregion

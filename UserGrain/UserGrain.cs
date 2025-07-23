@@ -67,6 +67,11 @@ public class UserGrain : Grain, IUserGrain
         return Task.FromResult(UserStateToUser());
     }
 
+    public Task<string?> GetUserName()
+    {
+        return Task.FromResult(_userState.State.UserName);
+    }
+
     public override Task OnActivateAsync(CancellationToken cancellationToken)
     {
         _grainId = this.GetPrimaryKeyString();

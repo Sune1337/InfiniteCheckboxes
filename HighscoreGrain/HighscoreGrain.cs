@@ -31,6 +31,11 @@ public class HighscoreGrain : Grain, IHighscoreGrain
 
     #region Public Methods and Operators
 
+    public Task<Dictionary<string, ulong>> GetScores()
+    {
+        return Task.FromResult(_highscoreState.State.Highscores);
+    }
+
     public async Task UpdateScore(Dictionary<string, ulong> scores)
     {
         // Remove users that already exist on the highscore list with a higher score.
