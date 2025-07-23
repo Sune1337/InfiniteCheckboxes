@@ -15,5 +15,6 @@ export const routes: Routes = [
     ]
   },
   { path: 'About', component: About },
-  { path: '**', redirectTo: 'Checkboxes', pathMatch: 'full' }
+  { path: '', component: About, pathMatch: 'full' },
+  { path: '**', redirectTo: '/' }
 ];

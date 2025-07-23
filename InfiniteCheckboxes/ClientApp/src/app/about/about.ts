@@ -1,10 +1,13 @@
 import { AfterViewInit, Component, inject, TemplateRef, ViewChild } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { HeaderService } from '../../utils/header.service';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-about',
-  imports: [],
+  imports: [
+    RouterLink
+  ],
   templateUrl: './about.html',
   styleUrl: './about.scss'
 })
