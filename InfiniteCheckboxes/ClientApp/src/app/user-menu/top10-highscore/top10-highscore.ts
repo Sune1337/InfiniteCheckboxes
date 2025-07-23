@@ -4,12 +4,14 @@ import { Tab } from './tabs/tab/tab';
 import { Tabs } from './tabs/tabs';
 import { HighscoreApiService } from '../../../../api/highscore-api.service';
 import { Highscore } from '../../../../api/models/highscore';
+import { LimitPipe } from '../../../utils/limit-pipe';
 
 @Component({
   selector: 'app-top10-highscore',
   imports: [
     Tab,
-    Tabs
+    Tabs,
+    LimitPipe
   ],
   templateUrl: './top10-highscore.html',
   styleUrl: './top10-highscore.scss',

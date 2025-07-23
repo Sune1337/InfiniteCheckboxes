@@ -7,7 +7,7 @@
             <col style="width: auto">
             <col style="width: 5rem">
           </colgroup>
-          @for (score of highscore.scores; track score) {
+          @for (score of highscore.scores | limit: 10; track score) {
             <tr>
               <td>{{ score.username }}</td>
               <td>{{ score.score }}</td>
@@ -28,7 +28,7 @@
             <col style="width: auto">
             <col style="width: 5rem">
           </colgroup>
-          @for (score of highscore.scores; track score) {
+          @for (score of highscore.scores | limit: 10; track score) {
             <tr>
               <td>{{ score.username }}</td>
               <td>{{ score.score }}</td>
