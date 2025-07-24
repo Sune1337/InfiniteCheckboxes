@@ -90,7 +90,7 @@ public class UserObserverService : IHostedService, IUserObserverManager
                     foreach (var value in values.Values)
                     {
                         await _checkboxHubContext.Clients
-                            .Group($"{HubGroups.UserGroupPrefix}_{id}")
+                            .User(id)
                             .SendAsync("UB", new { value.GoldBalance });
                     }
                 };

@@ -119,7 +119,6 @@ public class CheckboxHub : Hub
 
         // Subscribe to user updates.
         var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new InvalidOperationException("User not logged in.");
-        await Groups.AddToGroupAsync(Context.ConnectionId, $"{HubGroups.UserGroupPrefix}_{userId}");
         await _userObserverManager.SubscribeAsync(userId);
 
         // Get the current user to seed client.
