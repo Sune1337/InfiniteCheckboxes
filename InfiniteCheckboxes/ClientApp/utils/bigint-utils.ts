@@ -60,6 +60,11 @@ export function bigIntToHexString(id: bigint): string {
     throw new Error("Number is too large to fit in 256 bits");
   }
 
+  // Pad with leading zero if needed to ensure even length
+  if (hexString.length % 2) {
+    hexString = '0' + hexString;
+  }
+
   return hexString;
 }
 
