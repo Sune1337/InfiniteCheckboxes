@@ -9,6 +9,7 @@ import { RouterLink } from '@angular/router';
 import { Accordion } from './accordion/accordion';
 import { AccordionPanel } from './accordion/accordion-panel/accordion-panel';
 import { Top10Highscore } from './top10-highscore/top10-highscore';
+import { getErrorMessage } from '../../utils/get-error-message';
 
 @Component({
   selector: 'app-user-menu',
@@ -58,7 +59,7 @@ export class UserMenu implements OnInit, OnDestroy {
       await this.userService.setUserDetails(localUser);
       location.reload();
     } catch (error: any) {
-      alert(error?.message ?? 'Something went wrong');
+      alert(getErrorMessage(error));
     }
   }
 

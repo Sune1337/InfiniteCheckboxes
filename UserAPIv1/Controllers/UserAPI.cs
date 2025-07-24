@@ -47,6 +47,11 @@ public class UserAPI : ControllerBase
     [HttpPut]
     public async Task SetUserDetails(UserDetails userDetails)
     {
+        if (userDetails.UserName?.Length > 25)
+        {
+            throw new ArgumentException("User name too long.");
+        }
+        
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new InvalidOperationException("User not logged in.");
         var userGrain = _grainFactory.GetGrain<IUserGrain>(userId);
         await userGrain.SetUserName(userDetails.UserName);
