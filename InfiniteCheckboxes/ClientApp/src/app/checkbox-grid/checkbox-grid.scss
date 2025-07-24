@@ -40,4 +40,23 @@
 input.gold-spot {
   box-shadow: 0 0 4px 4px gold;
   background-color: gold;
+
+  /* Reset appearance for all browsers */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  /* Box shadow for all browsers */
+  -webkit-box-shadow: 0 0 4px 4px gold;
+  -moz-box-shadow: 0 0 4px 4px gold;
+  border: 2px solid gold;
+  border-radius: 3px;
+}
+
+input.gold-spot:checked {
+  background-color: gold;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z' stroke='%23000' stroke-width='2' fill='%23000'/%3E%3C/svg%3E");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 18px;
 }
