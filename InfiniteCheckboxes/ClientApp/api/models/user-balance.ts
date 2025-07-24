@@ -1,3 +1,3 @@
 export interface UserBalance {
-  goldBalance: number;
+  GoldBalance: number;
 }

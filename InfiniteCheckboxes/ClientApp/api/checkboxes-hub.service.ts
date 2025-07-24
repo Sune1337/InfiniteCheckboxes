@@ -1,9 +1,10 @@
 import { inject, Injectable } from '@angular/core';
 import { first, Observable, ReplaySubject, shareReplay, Subject, Subscription, timer } from "rxjs";
 import { HubConnection, HubConnectionBuilder, RetryContext } from "@microsoft/signalr";
+import { MessagePackHubProtocol } from '@microsoft/signalr-protocol-msgpack';
 import { HubStatus, HubStatusService } from './hub-status.service';
 import { decompressBitArray } from '../utils/decompress';
-import { base64ToHexString, base64ToUint8Array, bigIntToBase64, bigIntToHexString } from '../utils/bigint-utils';
+import { bigIntToHexString, bigIntToMinimalBytes, bytesToHexString } from '../utils/bigint-utils';
 import { decompressIndexAndBoolArray } from '../utils/index-and-bool-utils';
 import { CheckboxStatistics } from './models/checkbox-statistics';
 import { GlobalStatistics } from './models/GlobalStatistics';
@@ -56,21 +57,20 @@ export class CheckboxesHubService {
     }
 
     this.checkboxPageSubscriptions[hexId] = { subscribeToStatistics };
-    const base64Id = bigIntToBase64(id);
+    const byteId = bigIntToMinimalBytes(id);
 
     this.hubConnectionObservable
       .pipe(first())
       .subscribe(async hubConnection => {
-        const base64Data = await hubConnection.invoke(`CheckboxesSubscribe`, base64Id, subscribeToStatistics);
+        const compressedBytes = await hubConnection.invoke(`CheckboxesSubscribe`, byteId, subscribeToStatistics);
         if (!this.checkboxPageSubscriptions[hexId]) {
           // Caller stopped subscribing to this page before we got first data.
           return;
         }
 
-        if (base64Data === null) {
+        if (compressedBytes === null) {
           this.privateCheckboxPages[hexId] = Array(4096);
         } else {
-          const compressedBytes = base64ToUint8Array(base64Data);
           this.privateCheckboxPages[hexId] = decompressBitArray(compressedBytes);
         }
 
@@ -84,12 +84,12 @@ export class CheckboxesHubService {
       return;
     }
 
-    const base64Id = bigIntToBase64(BigInt(`0x${hexId}`));
+    const byteId = bigIntToMinimalBytes(BigInt(`0x${hexId}`));
 
     this.hubConnectionObservable
       .pipe(first())
       .subscribe(async hubConnection => {
-        await hubConnection.invoke(`CheckboxesUnsubscribe`, base64Id);
+        await hubConnection.invoke(`CheckboxesUnsubscribe`, byteId);
       });
 
     delete this.checkboxPageSubscriptions[hexId];
@@ -104,7 +104,7 @@ export class CheckboxesHubService {
         .pipe(first())
         .subscribe(async hubConnection => {
           try {
-            const result = await hubConnection.invoke(`SetCheckbox`, bigIntToBase64(id), index, isChecked ? 1 : 0);
+            const result = await hubConnection.invoke(`SetCheckbox`, bigIntToMinimalBytes(id), index, isChecked ? 1 : 0);
             if (result) {
               reject(new Error(result));
             }
@@ -125,12 +125,11 @@ export class CheckboxesHubService {
           // Subscribe to checkbox-pages.
           for (const hexId of Object.keys(this.privateCheckboxPages)) {
             const bigIntId = BigInt(`0x${hexId}`);
-            const base64Id = bigIntToBase64(bigIntId);
-            const base64Data = await hubConnection.invoke(`CheckboxesSubscribe`, base64Id, this.checkboxPageSubscriptions[hexId]?.subscribeToStatistics ?? false);
-            if (base64Data === null) {
+            const byteId = bigIntToMinimalBytes(bigIntId);
+            const compressedBytes = await hubConnection.invoke(`CheckboxesSubscribe`, byteId, this.checkboxPageSubscriptions[hexId]?.subscribeToStatistics ?? false);
+            if (compressedBytes === null) {
               this.privateCheckboxPages[hexId] = Array(4096);
             } else {
-              const compressedBytes = base64ToUint8Array(base64Data);
               this.privateCheckboxPages[hexId] = decompressBitArray(compressedBytes);
             }
 
@@ -153,14 +152,13 @@ export class CheckboxesHubService {
     // This is the first connection to the hub. Register callbacks.
 
     // Listen for updated checkbox-pages.
-    hubConnection.on('CheckboxesUpdate', (base64PageId: string, base64Data: string) => {
-      const pageId = base64ToHexString(base64PageId);
+    hubConnection.on('CheckboxesUpdate', (bytePageId: Uint8Array, data: Uint8Array) => {
+      const pageId = bytesToHexString(bytePageId);
       const items = this.privateCheckboxPages[pageId];
       if (!items) {
         return;
       }
 
-      const data = base64ToUint8Array(base64Data);
       const values = decompressIndexAndBoolArray(data);
       for (const value of values) {
         items[value[0]] = value[1];
@@ -170,8 +168,8 @@ export class CheckboxesHubService {
     });
 
     // Listen for updated gold spots.
-    hubConnection.on(`GoldSpot`, (base64PageId: string, values: number[]) => {
-      const pageId = base64ToHexString(base64PageId);
+    hubConnection.on(`GoldSpot`, (bytePageId: Uint8Array, values: number[]) => {
+      const pageId = bytesToHexString(bytePageId);
       const items = this.privateGoldSpots[pageId] ?? [];
 
       for (const value of values) {
@@ -183,8 +181,8 @@ export class CheckboxesHubService {
     });
 
     // Listen for checkbox-page statistics.
-    hubConnection.on(`CS`, (base64PageId: string, checkboxStatistics: CheckboxStatistics) => {
-      const pageId = base64ToHexString(base64PageId);
+    hubConnection.on(`CS`, (bytePageId: Uint8Array, checkboxStatistics: CheckboxStatistics) => {
+      const pageId = bytesToHexString(bytePageId);
       this.privateCheckboxPageStatistics[pageId] = checkboxStatistics;
       this.checkboxStatistics.next(this.privateCheckboxPageStatistics);
     });
@@ -192,7 +190,7 @@ export class CheckboxesHubService {
     // Listen for global statistics.
     hubConnection.on(`GS`, (numberOfChecked: number) => {
       this.globalStatistics.next({
-        numberOfChecked
+        NumberOfChecked: numberOfChecked
       });
     });
 
@@ -219,6 +217,7 @@ export class CheckboxesHubService {
         // Connect to hub.
         const hubConnection = new HubConnectionBuilder()
           .withUrl('/hubs/v1/CheckboxHub', { accessTokenFactory: getLocalUserId })
+          .withHubProtocol(new MessagePackHubProtocol())
           .withAutomaticReconnect({
             // Retry connecting to hub until the observable is unsubscribed.
             nextRetryDelayInMilliseconds(retryContext: RetryContext): number | null {

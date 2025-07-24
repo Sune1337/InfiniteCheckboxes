@@ -7,17 +7,17 @@
 
       <div>
         Players: {{ numberOfPlayers() }}
-        <input type="checkbox" checked style="width: 16px; height: 16px;">: {{ war()?.numberOfChecked ?? '...' }}
-        <input type="checkbox" style="width: 16px; height: 16px;"> {{ war()?.numberOfUnchecked ?? '...' }}
+        <input type="checkbox" checked style="width: 16px; height: 16px;">: {{ war()?.NumberOfChecked ?? '...' }}
+        <input type="checkbox" style="width: 16px; height: 16px;"> {{ war()?.NumberOfUnchecked ?? '...' }}
       </div>
 
       <div>
-        @if (!war()?.startUtc) {
+        @if (!war()?.StartUtc) {
           A war is brewing! Make the first strike!
-        } @else if (!war()?.endUtc) {
+        } @else if (!war()?.EndUtc) {
           The war is active! Good luck soldier.
         } @else {
-          This war has ended. {{ war()?.winningTeam == 0 ? 'Checkers' : 'Uncheckers' }} won!
+          This war has ended. {{ war()?.WinningTeam }} won!
           <a href="javascript:void(0)" (click)="gotoCurrentWar()">Join the next war</a>
         }
       </div>
@@ -27,7 +27,7 @@
 
 <div class="checkbox-container">
   @if (war(); as war) {
-    <app-checkbox-grid [gridWidth]="war.battlefieldWidth" [maxSize]="war.battlefieldWidth * war.battlefieldWidth" [subscribeToStatistics]="true"></app-checkbox-grid>
+    <app-checkbox-grid [gridWidth]="war.BattlefieldWidth" [maxSize]="war.BattlefieldWidth * war.BattlefieldWidth" [subscribeToStatistics]="true"></app-checkbox-grid>
   }
 </div>
 

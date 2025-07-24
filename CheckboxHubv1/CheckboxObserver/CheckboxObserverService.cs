@@ -91,20 +91,20 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
             if (_subscriptions.TryGetValue(id, out var subscription) == false)
             {
                 var checkboxPageUpdates = new CheckboxPageUpdates(_logger);
-                var base64Id = Convert.ToBase64String(id.HexStringToByteArray());
+                var byteId = id.HexStringToByteArray();
 
                 checkboxPageUpdates.DebounceCheckboxUpdate.EmitValues += async values =>
                 {
                     await _checkboxHubContext.Clients
                         .Group($"{HubGroups.CheckboxGroupPrefix}_{id}")
-                        .SendAsync("CheckboxesUpdate", base64Id, BitCoding.IndexAndBoolCoder.Encode(values));
+                        .SendAsync("CheckboxesUpdate", byteId, BitCoding.IndexAndBoolCoder.Encode(values));
                 };
 
                 checkboxPageUpdates.DebounceGoldSpot.EmitValues += async values =>
                 {
                     await _checkboxHubContext.Clients
                         .Group($"{HubGroups.CheckboxGroupPrefix}_{id}")
-                        .SendAsync("GoldSpot", base64Id, values.Keys);
+                        .SendAsync("GoldSpot", byteId, values.Keys);
                 };
 
                 _subscriptions.Add(id, checkboxPageUpdates);

@@ -1,3 +1,3 @@
 export interface GlobalStatistics {
-  numberOfChecked: number;
+  NumberOfChecked: number;
 }

@@ -1,16 +1,11 @@
 export interface War {
-  id: number;
-  warLocationId?: string | null;
-  createdUtc?: Date;
-  startUtc?: Date;
-  endUtc?: Date;
-  battlefieldWidth: number;
-  numberOfChecked: number;
-  numberOfUnchecked: number;
-  winningTeam?: Team | null;
-}
-
-export enum Team {
-  checkers,
-  uncheckers
+  Id: number;
+  WarLocationId?: string | null;
+  CreatedUtc?: Date;
+  StartUtc?: Date;
+  EndUtc?: Date;
+  BattlefieldWidth: number;
+  NumberOfChecked: number;
+  NumberOfUnchecked: number;
+  WinningTeam?: string | null;
 }

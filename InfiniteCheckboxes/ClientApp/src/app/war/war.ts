@@ -123,17 +123,17 @@ export class WarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private warUpdated = (wars: Wars): void => {
     const updatedWar = wars[this.currentWarId];
-    if (!updatedWar || !updatedWar.warLocationId) {
+    if (!updatedWar || !updatedWar.WarLocationId) {
       return;
     }
 
-    if (this.war()?.warLocationId !== updatedWar.warLocationId) {
+    if (this.war()?.WarLocationId !== updatedWar.WarLocationId) {
       if (!this.checkboxGrid) {
         setTimeout(() => {
-          this.checkboxGrid.navigateToPage(`0x${updatedWar.warLocationId}`);
+          this.checkboxGrid.navigateToPage(`0x${updatedWar.WarLocationId}`);
         });
       } else {
-        this.checkboxGrid.navigateToPage(`0x${updatedWar.warLocationId}`);
+        this.checkboxGrid.navigateToPage(`0x${updatedWar.WarLocationId}`);
       }
     }
 
@@ -142,15 +142,15 @@ export class WarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private checkboxStatisticsUpdated = (checkboxStatistics: CheckboxPageStatistics): void => {
     const war = this.war();
-    if (!war?.warLocationId) {
+    if (!war?.WarLocationId) {
       return;
     }
 
-    const stats = checkboxStatistics[war.warLocationId];
+    const stats = checkboxStatistics[war.WarLocationId];
     if (!stats) {
       return;
     }
 
-    this.numberOfPlayers.set(stats.numberOfSubscribers);
+    this.numberOfPlayers.set(stats.NumberOfSubscribers);
   }
 }

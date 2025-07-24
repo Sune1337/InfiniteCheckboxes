@@ -80,7 +80,7 @@ export class Checkboxes implements OnInit, AfterViewInit, OnDestroy {
     this.checkboxHubService.globalStatistics
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe(stats => {
-        this.numberOfChecked.set(stats.numberOfChecked);
+        this.numberOfChecked.set(stats.NumberOfChecked);
       });
 
     this.checkboxHubService.user

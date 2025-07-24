@@ -67,10 +67,10 @@ public class StatisticsObserverObserverService : IHostedService, IStatisticsObse
 
     public async Task UpdateCheckboxStatisticsAsync(string id, CheckboxStatistics checkboxStatistics)
     {
-        var base64Id = Convert.ToBase64String(id.HexStringToByteArray());
+        var byteId = id.HexStringToByteArray();
         await _checkboxHubContext.Clients
             .Group($"{HubGroups.CheckboxStatisticsGroupPrefix}_{id}")
-            .SendAsync("CS", base64Id, checkboxStatistics);
+            .SendAsync("CS", byteId, checkboxStatistics);
     }
 
     public async Task UpdateGlobalStatisticsAsync(ulong countChecked, ulong countUnchecked)

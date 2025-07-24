@@ -56,7 +56,7 @@ builder.UseOrleansClient(clientBuilder =>
 
 // Add services.
 builder.Services.AddAPIKeyAuthentication();
-builder.Services.AddSignalR();
+builder.Services.AddSignalR().AddMessagePackProtocol();
 builder.Services.AddControllers();
 builder.Services.AddDefaultExceptionHandler();
 builder.Services.AddCheckboxServices();

@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { first, Observable, shareReplay, Subject, Subscription, timer } from "rxjs";
 import { HubConnection, HubConnectionBuilder, RetryContext } from "@microsoft/signalr";
+import { MessagePackHubProtocol } from '@microsoft/signalr-protocol-msgpack';
 import { HubStatus, HubStatusService } from './hub-status.service';
 import { War } from './models/war';
 import { createTrackedSubject } from '../utils/tracked-subject';
@@ -31,24 +32,6 @@ export class WarHubService {
     this.wars = createTrackedSubject(() => new Subject<Wars>(), this.whenSubscribed, this.whenUnsubscribed);
   }
 
-  private static parseWar = (war: War): War => {
-    const warAsAny = war as any;
-
-    if (typeof (warAsAny.createdUtc) == 'string') {
-      war.createdUtc = new Date(warAsAny.createdUtc);
-    }
-
-    if (typeof (warAsAny.startUtc) == 'string') {
-      war.startUtc = new Date(warAsAny.startUtc);
-    }
-
-    if (typeof (warAsAny.endUtc) == 'string') {
-      war.endUtc = new Date(warAsAny.endUtc);
-    }
-
-    return war;
-  }
-
   public subscribeToWar = (id: number): void => {
     if (this.warSubscriptions[id]) {
       return;
@@ -65,7 +48,7 @@ export class WarHubService {
           return;
         }
 
-        this.privateWars[id] = WarHubService.parseWar(war);
+        this.privateWars[id] = war;
         this.wars.next(this.privateWars);
       });
   }
@@ -115,7 +98,7 @@ export class WarHubService {
               return;
             }
 
-            this.privateWars[id] = WarHubService.parseWar(war);
+            this.privateWars[id] = war;
             this.wars.next(this.privateWars);
           }
         });
@@ -140,7 +123,7 @@ export class WarHubService {
         return;
       }
 
-      this.privateWars[warId] = WarHubService.parseWar(war);
+      this.privateWars[warId] = war;
       this.wars.next(this.privateWars);
     });
   }
@@ -162,6 +145,7 @@ export class WarHubService {
         // Connect to hub.
         const hubConnection = new HubConnectionBuilder()
           .withUrl('/hubs/v1/WarHub', { accessTokenFactory: getLocalUserId })
+          .withHubProtocol(new MessagePackHubProtocol())
           .withAutomaticReconnect({
             // Retry connecting to hub until the observable is unsubscribed.
             nextRetryDelayInMilliseconds(retryContext: RetryContext): number | null {

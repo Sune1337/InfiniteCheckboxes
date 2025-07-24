@@ -1,3 +1,3 @@
 export interface CheckboxStatistics {
-  numberOfSubscribers: number;
+  NumberOfSubscribers: number;
 }

@@ -49,58 +49,60 @@ public class CheckboxHub : Hub
 
     #region Public Methods and Operators
 
-    public async Task<byte[]?> CheckboxesSubscribe(string base64Id, bool subscribeToStatistics)
+    public async Task<byte[]?> CheckboxesSubscribe(byte[] byteId, bool subscribeToStatistics)
     {
-        if (base64Id.TryParse256BitBase64Id(out var parsedId) == false)
+        if (byteId.Length > 32)
         {
-            throw new ArgumentException("Invalid checkbox page id.", nameof(base64Id));
+            throw new ArgumentException("Id is too big.");
         }
 
-        if (CheckboxIds?.Contains(parsedId) == false)
+        var hexId = Convert.ToHexStringLower(byteId).TrimLeadingZeroPairs();
+        if (CheckboxIds?.Contains(hexId) == false)
         {
             if (subscribeToStatistics)
             {
-                await Groups.AddToGroupAsync(Context.ConnectionId, $"{HubGroups.CheckboxStatisticsGroupPrefix}_{parsedId}");
+                await Groups.AddToGroupAsync(Context.ConnectionId, $"{HubGroups.CheckboxStatisticsGroupPrefix}_{hexId}");
             }
-            
-            await Groups.AddToGroupAsync(Context.ConnectionId, $"{HubGroups.CheckboxGroupPrefix}_{parsedId}");
-            await _checkboxObserverManager.SubscribeAsync(parsedId);
+
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"{HubGroups.CheckboxGroupPrefix}_{hexId}");
+            await _checkboxObserverManager.SubscribeAsync(hexId);
 
             // Remember that the current client subscribes to this checkbox-page.
-            CheckboxIds?.Add(parsedId);
+            CheckboxIds?.Add(hexId);
 
             // Seed client with gold-spots.
-            var goldDiggerGrain = _grainFactory.GetGrain<IGoldDiggerGrain>(parsedId);
+            var goldDiggerGrain = _grainFactory.GetGrain<IGoldDiggerGrain>(hexId);
             var goldSpots = await goldDiggerGrain.GetFoundGoldSpots();
             if ((goldSpots?.Length ?? 0) > 0)
             {
-                await Clients.Caller.SendAsync("GoldSpot", base64Id, goldSpots);
+                await Clients.Caller.SendAsync("GoldSpot", byteId, goldSpots);
             }
         }
 
         // Get the initial state of checkboxes.
-        var checkboxGrain = _grainFactory.GetGrain<ICheckboxGrain>(parsedId);
+        var checkboxGrain = _grainFactory.GetGrain<ICheckboxGrain>(hexId);
         return await checkboxGrain.GetCheckboxes();
     }
 
-    public async Task CheckboxesUnsubscribe(string base64Id)
+    public async Task CheckboxesUnsubscribe(byte[] byteId)
     {
-        if (base64Id.TryParse256BitBase64Id(out var parsedId) == false)
+        if (byteId.Length > 32)
         {
-            throw new ArgumentException("Invalid checkbox page id.", nameof(base64Id));
+            throw new ArgumentException("Id is too big.");
         }
 
-        if (CheckboxIds?.Contains(parsedId) == false)
+        var hexId = Convert.ToHexStringLower(byteId).TrimLeadingZeroPairs();
+        if (CheckboxIds?.Contains(hexId) == false)
         {
             return;
         }
 
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"{HubGroups.CheckboxGroupPrefix}_{parsedId}");
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"{HubGroups.CheckboxStatisticsGroupPrefix}_{parsedId}");
-        await _checkboxObserverManager.UnsubscribeAsync(parsedId);
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"{HubGroups.CheckboxGroupPrefix}_{hexId}");
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"{HubGroups.CheckboxStatisticsGroupPrefix}_{hexId}");
+        await _checkboxObserverManager.UnsubscribeAsync(hexId);
 
         // The current connection no longer subscribes to the checkbox-page.
-        CheckboxIds?.Remove(parsedId);
+        CheckboxIds?.Remove(hexId);
     }
 
     public override async Task OnConnectedAsync()
@@ -165,7 +167,7 @@ public class CheckboxHub : Hub
         await _userObserverManager.UnsubscribeAsync(userId);
     }
 
-    public async Task<string?> SetCheckbox(string base64Id, int index, byte value)
+    public async Task<string?> SetCheckbox(byte[] byteId, int index, byte value)
     {
         var acquired = false;
         if (FixedWindowRateLimiter != null)
@@ -178,16 +180,18 @@ public class CheckboxHub : Hub
             return "Too many requests. Try again later.";
         }
 
-        if (base64Id.TryParse256BitBase64Id(out var parsedId) == false)
+        if (byteId.Length > 32)
         {
-            throw new ArgumentException("Invalid checkbox page id.", nameof(base64Id));
+            throw new ArgumentException("Id is too big.");
         }
+
+        var hexId = Convert.ToHexStringLower(byteId).TrimLeadingZeroPairs();
 
         try
         {
             // Set state of checkbox.
             var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new InvalidOperationException("User not logged in.");
-            var checkboxGrain = _grainFactory.GetGrain<ICheckboxGrain>(parsedId);
+            var checkboxGrain = _grainFactory.GetGrain<ICheckboxGrain>(hexId);
             await checkboxGrain.SetCheckbox(index, value, userId);
         }
 
