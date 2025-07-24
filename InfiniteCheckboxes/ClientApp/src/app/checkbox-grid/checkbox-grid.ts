@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, OnDestroy, signal, ViewChild, WritableSignal } from '@angular/core';
 import { CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
 import { Subject, takeUntil } from 'rxjs';
-import { CheckboxesHubService, CheckboxPages, GoldSpots } from '../../../api/checkboxes-hub.service';
+import { CheckboxesHubService, CheckboxPages, GoldSpots } from '../../api/checkboxes-hub.service';
 import { LimitPipe } from '../../utils/limit-pipe';
 import { getErrorMessage } from '../../utils/get-error-message';
 

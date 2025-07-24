@@ -4,9 +4,9 @@ import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { filter, Subject, takeUntil } from 'rxjs';
 import { CheckboxGrid } from '../checkbox-grid/checkbox-grid';
-import { CheckboxesHubService } from '../../../api/checkboxes-hub.service';
+import { CheckboxesHubService } from '../../api/checkboxes-hub.service';
 import { HeaderService } from '../../utils/header.service';
-import { UserBalance } from '../../../api/models/user-balance';
+import { UserBalance } from '../../api/models/user-balance';
 
 @Component({
   selector: 'app-checkboxes',

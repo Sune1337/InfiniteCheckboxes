@@ -2,8 +2,8 @@ import { ChangeDetectionStrategy, Component, inject, OnDestroy, signal } from '@
 import { Subject, Subscription, takeUntil } from 'rxjs';
 import { Tab } from './tabs/tab/tab';
 import { Tabs } from './tabs/tabs';
-import { HighscoreApiService } from '../../../../api/highscore-api.service';
-import { Highscore } from '../../../../api/models/highscore';
+import { HighscoreApiService } from '../../../api/highscore-api.service';
+import { Highscore } from '../../../api/models/highscore';
 import { LimitPipe } from '../../../utils/limit-pipe';
 
 @Component({

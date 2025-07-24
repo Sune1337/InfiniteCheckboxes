@@ -7,10 +7,10 @@ import { decompressBitArray } from '../utils/decompress';
 import { bigIntToHexString, bigIntToMinimalBytes, bytesToHexString } from '../utils/bigint-utils';
 import { decompressIndexAndBoolArray } from '../utils/index-and-bool-utils';
 import { CheckboxStatistics } from './models/checkbox-statistics';
-import { GlobalStatistics } from './models/GlobalStatistics';
+import { GlobalStatistics } from './models/global-statistics';
 import { UserBalance } from './models/user-balance';
 import { createTrackedSubject } from '../utils/tracked-subject';
-import { getLocalUserId } from '../src/utils/user-utils';
+import { getLocalUserId } from '../utils/user-utils';
 
 export type CheckboxPages = { [id: string]: boolean[] };
 export type GoldSpots = { [id: string]: number[] };

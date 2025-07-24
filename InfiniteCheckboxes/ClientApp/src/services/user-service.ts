@@ -1,9 +1,9 @@
 import { inject, Injectable } from '@angular/core';
 import { LocalUser } from './models/local-user';
-import { UserApiService } from '../../api/user-api.service';
+import { UserApiService } from '../api/user-api.service';
 import { getLocalUser, setLocalUser } from '../utils/user-utils';
 import { ReplaySubject } from 'rxjs';
-import { UserDetails } from '../../api/models/user-details';
+import { UserDetails } from '../api/models/user-details';
 
 @Injectable({
   providedIn: 'root'
