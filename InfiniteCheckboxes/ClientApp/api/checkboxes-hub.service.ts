@@ -4,6 +4,7 @@ import { HubConnection, HubConnectionBuilder, RetryContext } from "@microsoft/si
 import { HubStatus, HubStatusService } from './hub-status.service';
 import { decompressBitArray } from '../utils/decompress';
 import { base64ToHexString, base64ToUint8Array, bigIntToBase64, bigIntToHexString } from '../utils/bigint-utils';
+import { decompressIndexAndBoolArray } from '../utils/index-and-bool-utils';
 import { CheckboxStatistics } from './models/checkbox-statistics';
 import { GlobalStatistics } from './models/GlobalStatistics';
 import { UserBalance } from './models/user-balance';
@@ -151,15 +152,17 @@ export class CheckboxesHubService {
     // This is the first connection to the hub. Register callbacks.
 
     // Listen for updated checkbox-pages.
-    hubConnection.on('CheckboxesUpdate', (base64PageId: string, values: number[][]) => {
+    hubConnection.on('CheckboxesUpdate', (base64PageId: string, base64Data: string) => {
       const pageId = base64ToHexString(base64PageId);
       const items = this.privateCheckboxPages[pageId];
       if (!items) {
         return;
       }
 
+      const data = base64ToUint8Array(base64Data);
+      const values = decompressIndexAndBoolArray(data);
       for (const value of values) {
-        items[value[0]] = value[1] != 0;
+        items[value[0]] = value[1];
       }
 
       this.checkboxPages.next(this.privateCheckboxPages);

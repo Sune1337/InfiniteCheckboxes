@@ -1,6 +1,6 @@
-namespace CheckboxGrain.Utils;
+namespace BitCoding;
 
-public static class CompressedBitArray
+public static class BitArrayCoder
 {
     #region Constants
 

@@ -1,7 +1,8 @@
 namespace CheckboxGrain;
 
+using BitCoding;
+
 using global::CheckboxGrain.Models;
-using global::CheckboxGrain.Utils;
 
 using GrainInterfaces;
 using GrainInterfaces.GoldDigger;
@@ -62,7 +63,7 @@ public class CheckboxGrain : Grain, ICheckboxGrain
 
     public async Task SetCheckbox(int index, byte value, string userId)
     {
-        _decompressedData ??= CompressedBitArray.Decompress(_checkboxState.State.Checkboxes) ?? new bool[CheckboxPageSize];
+        _decompressedData ??= BitArrayCoder.Decompress(_checkboxState.State.Checkboxes) ?? new bool[CheckboxPageSize];
         if (index < 0 || index >= _decompressedData.Length)
         {
             throw new ArgumentOutOfRangeException(nameof(index));
@@ -86,7 +87,7 @@ public class CheckboxGrain : Grain, ICheckboxGrain
             }
 
             _decompressedData[index] = normalValue;
-            _checkboxState.State.Checkboxes = CompressedBitArray.Compress(_decompressedData);
+            _checkboxState.State.Checkboxes = BitArrayCoder.Compress(_decompressedData);
             await _checkboxState.WriteStateAsync();
 
             // Update statistics.
@@ -99,7 +100,7 @@ public class CheckboxGrain : Grain, ICheckboxGrain
 
     public async Task SetCheckboxes(byte[] checkboxes)
     {
-        _decompressedData ??= CompressedBitArray.Decompress(_checkboxState.State.Checkboxes) ?? new bool[CheckboxPageSize];
+        _decompressedData ??= BitArrayCoder.Decompress(_checkboxState.State.Checkboxes) ?? new bool[CheckboxPageSize];
 
         var numberOfBits = Math.Min(checkboxes.Length * 8, _decompressedData.Length);
         for (var i = 0; i < numberOfBits; i++)
@@ -109,7 +110,7 @@ public class CheckboxGrain : Grain, ICheckboxGrain
             _decompressedData[i] = (checkboxes[byteIndex] & (1 << bitIndex)) != 0;
         }
 
-        _checkboxState.State.Checkboxes = CompressedBitArray.Compress(_decompressedData);
+        _checkboxState.State.Checkboxes = BitArrayCoder.Compress(_decompressedData);
         await _checkboxState.WriteStateAsync();
     }
 

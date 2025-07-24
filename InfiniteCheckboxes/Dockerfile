@@ -28,6 +28,7 @@ COPY ["HighscoreAPIv1/", "HighscoreAPIv1/"]
 COPY ["GrainInterfaces/", "GrainInterfaces/"]
 COPY ["RedisMessages/", "RedisMessages/"]
 COPY ["Two56BitId/", "Two56BitId/"]
+COPY ["BitCoding/", "BitCoding/"]
 COPY ["ValueDebouncer/", "ValueDebouncer/"]
 COPY ["APIKeyAuthentication/", "APIKeyAuthentication/"]
 RUN dotnet restore "InfiniteCheckboxes/InfiniteCheckboxes.csproj"

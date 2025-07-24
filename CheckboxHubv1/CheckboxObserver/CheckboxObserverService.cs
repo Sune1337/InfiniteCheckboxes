@@ -97,7 +97,7 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
                 {
                     await _checkboxHubContext.Clients
                         .Group($"{HubGroups.CheckboxGroupPrefix}_{id}")
-                        .SendAsync("CheckboxesUpdate", base64Id, values.Select(v => (int[]) [v.Key, v.Value]));
+                        .SendAsync("CheckboxesUpdate", base64Id, BitCoding.IndexAndBoolCoder.Encode(values));
                 };
 
                 checkboxPageUpdates.DebounceGoldSpot.EmitValues += async values =>

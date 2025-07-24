@@ -13,6 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\BitCoding\BitCoding.csproj" />
       <ProjectReference Include="..\GrainInterfaces\GrainInterfaces.csproj" />
       <ProjectReference Include="..\RedisMessages\RedisMessages.csproj" />
       <ProjectReference Include="..\Two56BitId\Two56BitId.csproj" />
