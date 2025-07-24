@@ -3,6 +3,7 @@ import { CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport } 
 import { Subject, takeUntil } from 'rxjs';
 import { CheckboxesHubService, CheckboxPages, GoldSpots } from '../../../api/checkboxes-hub.service';
 import { LimitPipe } from '../../utils/limit-pipe';
+import { getErrorMessage } from '../../utils/get-error-message';
 
 interface CheckboxPage {
   pageId: bigint;
@@ -78,7 +79,7 @@ export class CheckboxGrid implements OnDestroy {
     try {
       pageId = await this.parseStringToBigInt(id);
     } catch (error: any) {
-      alert(error.message);
+      alert(getErrorMessage(error));
       return;
     }
 
@@ -136,7 +137,7 @@ export class CheckboxGrid implements OnDestroy {
       await this.checkboxHubService.setChecked(id, index, isChecked);
     } catch (error: any) {
       checkboxElement.checked = !isChecked
-      alert(error.message);
+      alert(getErrorMessage(error));
     }
   }
 
