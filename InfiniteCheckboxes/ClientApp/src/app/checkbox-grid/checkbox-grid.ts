@@ -27,6 +27,7 @@ export class CheckboxGrid implements OnDestroy {
 
   public gridWidth = input(32);
   public maxSize = input(0);
+  public subscribeToStatistics = input(false);
 
   // Generate grid-template-columns value.
   protected gridColumns = computed(() => `repeat(${this.gridWidth()}, 24px)`);
@@ -168,7 +169,7 @@ export class CheckboxGrid implements OnDestroy {
       const id = data[i].pageId;
       if (this.subscribedPageIds.includes(id)) continue;
 
-      this.checkboxHubService.subscribeToCheckboxPage(id);
+      this.checkboxHubService.subscribeToCheckboxPage(id, this.subscribeToStatistics());
       this.subscribedPageIds.push(id);
     }
   }

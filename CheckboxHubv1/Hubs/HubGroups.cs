@@ -5,6 +5,7 @@ public static class HubGroups
     #region Constants
 
     public const string CheckboxGroupPrefix = "Checkboxes";
+    public const string CheckboxStatisticsGroupPrefix = "CheckboxStatistics";
 
     #endregion
 }

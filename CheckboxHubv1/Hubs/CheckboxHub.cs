@@ -49,7 +49,7 @@ public class CheckboxHub : Hub
 
     #region Public Methods and Operators
 
-    public async Task<byte[]?> CheckboxesSubscribe(string base64Id)
+    public async Task<byte[]?> CheckboxesSubscribe(string base64Id, bool subscribeToStatistics)
     {
         if (base64Id.TryParse256BitBase64Id(out var parsedId) == false)
         {
@@ -58,6 +58,11 @@ public class CheckboxHub : Hub
 
         if (CheckboxIds?.Contains(parsedId) == false)
         {
+            if (subscribeToStatistics)
+            {
+                await Groups.AddToGroupAsync(Context.ConnectionId, $"{HubGroups.CheckboxStatisticsGroupPrefix}_{parsedId}");
+            }
+            
             await Groups.AddToGroupAsync(Context.ConnectionId, $"{HubGroups.CheckboxGroupPrefix}_{parsedId}");
             await _checkboxObserverManager.SubscribeAsync(parsedId);
 
@@ -91,6 +96,7 @@ public class CheckboxHub : Hub
         }
 
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"{HubGroups.CheckboxGroupPrefix}_{parsedId}");
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"{HubGroups.CheckboxStatisticsGroupPrefix}_{parsedId}");
         await _checkboxObserverManager.UnsubscribeAsync(parsedId);
 
         // The current connection no longer subscribes to the checkbox-page.

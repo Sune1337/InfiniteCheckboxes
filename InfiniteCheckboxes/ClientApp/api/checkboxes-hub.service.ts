@@ -14,6 +14,7 @@ import { getLocalUserId } from '../src/utils/user-utils';
 export type CheckboxPages = { [id: string]: boolean[] };
 export type GoldSpots = { [id: string]: number[] };
 export type CheckboxPageStatistics = { [id: string]: CheckboxStatistics };
+type CheckboxSubscriptionParameters = { subscribeToStatistics: boolean };
 
 @Injectable({
   providedIn: 'root'
@@ -29,7 +30,7 @@ export class CheckboxesHubService {
   private subjectSubscribers = 0;
   private hubConnectionObservable: Observable<HubConnection>;
   private hubConnectionSubscription?: Subscription;
-  private checkboxPageSubscriptions: { [id: string]: boolean } = {};
+  private checkboxPageSubscriptions: { [id: string]: CheckboxSubscriptionParameters } = {};
   private privateCheckboxPages: CheckboxPages = {};
   private privateGoldSpots: GoldSpots = {};
   private privateCheckboxPageStatistics: CheckboxPageStatistics = {};
@@ -48,19 +49,19 @@ export class CheckboxesHubService {
     this.user = createTrackedSubject(() => new ReplaySubject<UserBalance>(1), this.whenSubscribed, this.whenUnsubscribed);
   }
 
-  public subscribeToCheckboxPage = (id: bigint): void => {
+  public subscribeToCheckboxPage = (id: bigint, subscribeToStatistics: boolean): void => {
     const hexId = bigIntToHexString(id);
     if (this.checkboxPageSubscriptions[hexId]) {
       return;
     }
 
-    this.checkboxPageSubscriptions[hexId] = true;
+    this.checkboxPageSubscriptions[hexId] = { subscribeToStatistics };
     const base64Id = bigIntToBase64(id);
 
     this.hubConnectionObservable
       .pipe(first())
       .subscribe(async hubConnection => {
-        const base64Data = await hubConnection.invoke(`CheckboxesSubscribe`, base64Id);
+        const base64Data = await hubConnection.invoke(`CheckboxesSubscribe`, base64Id, subscribeToStatistics);
         if (!this.checkboxPageSubscriptions[hexId]) {
           // Caller stopped subscribing to this page before we got first data.
           return;
@@ -125,7 +126,7 @@ export class CheckboxesHubService {
           for (const hexId of Object.keys(this.privateCheckboxPages)) {
             const bigIntId = BigInt(`0x${hexId}`);
             const base64Id = bigIntToBase64(bigIntId);
-            const base64Data = await hubConnection.invoke(`CheckboxesSubscribe`, base64Id);
+            const base64Data = await hubConnection.invoke(`CheckboxesSubscribe`, base64Id, this.checkboxPageSubscriptions[hexId]?.subscribeToStatistics ?? false);
             if (base64Data === null) {
               this.privateCheckboxPages[hexId] = Array(4096);
             } else {

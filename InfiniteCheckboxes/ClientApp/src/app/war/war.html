@@ -27,7 +27,7 @@
 
 <div class="checkbox-container">
   @if (war(); as war) {
-    <app-checkbox-grid [gridWidth]="war.battlefieldWidth" [maxSize]="war.battlefieldWidth * war.battlefieldWidth"></app-checkbox-grid>
+    <app-checkbox-grid [gridWidth]="war.battlefieldWidth" [maxSize]="war.battlefieldWidth * war.battlefieldWidth" [subscribeToStatistics]="true"></app-checkbox-grid>
   }
 </div>
 

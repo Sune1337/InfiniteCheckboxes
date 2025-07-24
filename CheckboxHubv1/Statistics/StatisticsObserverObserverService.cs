@@ -69,7 +69,7 @@ public class StatisticsObserverObserverService : IHostedService, IStatisticsObse
     {
         var base64Id = Convert.ToBase64String(id.HexStringToByteArray());
         await _checkboxHubContext.Clients
-            .Group($"{HubGroups.CheckboxGroupPrefix}_{id}")
+            .Group($"{HubGroups.CheckboxStatisticsGroupPrefix}_{id}")
             .SendAsync("CS", base64Id, checkboxStatistics);
     }
 
