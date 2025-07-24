@@ -9,7 +9,7 @@ public class User
     public string? UserName { get; set; }
 
     [Id(1)]
-    public int GoldBalance { get; set; }
+    public ulong GoldBalance { get; set; }
 
     #endregion
 }

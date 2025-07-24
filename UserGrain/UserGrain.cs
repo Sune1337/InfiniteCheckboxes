@@ -58,8 +58,11 @@ public class UserGrain : Grain, IUserGrain
 
     public async Task AddGold(int amount)
     {
-        _userState.State.GoldBalance += amount;
+        _userState.State.GoldBalance += (ulong)amount;
         await WriteStateAndPublishAsync();
+
+        var goldDiggerHighscoreGrain = GrainFactory.GetGrain<IHighscoreCollectorGrain>(HighscoreLists.GoldDigger);
+        await goldDiggerHighscoreGrain.UpdateScore(_grainId, _userState.State.GoldBalance);
     }
 
     public Task<User> GetUser()

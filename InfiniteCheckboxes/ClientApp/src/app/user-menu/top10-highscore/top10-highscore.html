@@ -40,4 +40,25 @@
       }
     </div>
   </app-tab>
+
+  <app-tab title="Gold diggers">
+    <div class="top10-container">
+      @if (goldDiggersHighscore(); as highscore) {
+        <table class="highscore-table">
+          <colgroup>
+            <col style="width: auto">
+            <col style="width: 5rem">
+          </colgroup>
+          @for (score of highscore.scores | limit: 10; track score) {
+            <tr>
+              <td>{{ score.username }}</td>
+              <td>{{ score.score }}</td>
+            </tr>
+          }
+        </table>
+      } @else {
+        Loading highscores...
+      }
+    </div>
+  </app-tab>
 </app-tabs>

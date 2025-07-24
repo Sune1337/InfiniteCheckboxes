@@ -50,18 +50,22 @@ public class HighscoreAPI : ControllerBase
     {
         var checkedHighscoreGrain = _grainFactory.GetGrain<IHighscoreGrain>(HighscoreLists.Checked);
         var uncheckedHighscoreGrain = _grainFactory.GetGrain<IHighscoreGrain>(HighscoreLists.Unchecked);
+        var goldDiggerHighscoreGrain = _grainFactory.GetGrain<IHighscoreGrain>(HighscoreLists.GoldDigger);
 
         Task<Dictionary<string, ulong>> checkedHighscoresTask;
         Task<Dictionary<string, ulong>> uncheckedHighscoresTask;
+        Task<Dictionary<string, ulong>> goldDiggerHighscoreTask;
         await Task.WhenAll(
             checkedHighscoresTask = checkedHighscoreGrain.GetScores(),
-            uncheckedHighscoresTask = uncheckedHighscoreGrain.GetScores()
+            uncheckedHighscoresTask = uncheckedHighscoreGrain.GetScores(),
+            goldDiggerHighscoreTask = goldDiggerHighscoreGrain.GetScores()
         );
 
         var checkedHighscores = checkedHighscoresTask.Result;
         var uncheckedHighscores = uncheckedHighscoresTask.Result;
+        var goldDiggerHighscores = goldDiggerHighscoreTask.Result;
 
-        var userIds = ((Dictionary<string, ulong>[]) [checkedHighscores, uncheckedHighscores])
+        var userIds = ((Dictionary<string, ulong>[]) [checkedHighscores, uncheckedHighscores, goldDiggerHighscores])
             .SelectMany(d => d.Keys)
             .Distinct();
 
@@ -87,6 +91,11 @@ public class HighscoreAPI : ControllerBase
             {
                 Name = HighscoreLists.Unchecked,
                 Scores = uncheckedHighscores.Select(kv => new UserScore { Username = usernames.TryGetValue(kv.Key, out var username) ? username : "Anon", Score = kv.Value })
+            },
+            new Highscore
+            {
+                Name = HighscoreLists.GoldDigger,
+                Scores = goldDiggerHighscores.Select(kv => new UserScore { Username = usernames.TryGetValue(kv.Key, out var username) ? username : "Anon", Score = kv.Value })
             }
         ];
     }

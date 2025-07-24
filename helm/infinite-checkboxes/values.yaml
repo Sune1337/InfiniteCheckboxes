@@ -17,7 +17,7 @@ images:
   silohost:
     replicaCount: 3
     repository: silohost
-    tag: 1.0.23
+    tag: 1.0.24
     pullPolicy: IfNotPresent
     metricsServerPort:
 #    goldDiggerRngSecret: "<Key for HMACSHA256 in hex>"
@@ -32,7 +32,7 @@ images:
   webapp:
     replicaCount: 1
     repository: webapp
-    tag: 1.0.48
+    tag: 1.0.49
     pullPolicy: IfNotPresent
     metricsServerPort:
     useSerilogRequestLogging: false
