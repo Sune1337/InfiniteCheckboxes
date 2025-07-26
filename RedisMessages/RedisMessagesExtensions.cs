@@ -3,6 +3,7 @@ namespace RedisMessages;
 using Microsoft.Extensions.DependencyInjection;
 
 using RedisMessages.CheckboxUpdate;
+using RedisMessages.MinesweeperUpdate;
 using RedisMessages.UserUpdate;
 using RedisMessages.WarUpdate;
 
@@ -26,6 +27,11 @@ public static class RedisMessagesExtensions
         services.AddSingleton<RedisUserUpdatePublisherService>();
         services.AddSingleton<IRedisUserUpdatePublisherManager>(serviceProvider => serviceProvider.GetRequiredService<RedisUserUpdatePublisherService>());
         services.AddHostedService<RedisUserUpdatePublisherService>(serviceProvider => serviceProvider.GetRequiredService<RedisUserUpdatePublisherService>());
+
+        // MinesweeperUpdate.
+        services.AddSingleton<RedisMinesweeperUpdatePublisherService>();
+        services.AddSingleton<IRedisMinesweeperUpdatePublisherManager>(serviceProvider => serviceProvider.GetRequiredService<RedisMinesweeperUpdatePublisherService>());
+        services.AddHostedService<RedisMinesweeperUpdatePublisherService>(serviceProvider => serviceProvider.GetRequiredService<RedisMinesweeperUpdatePublisherService>());
 
         return services;
     }

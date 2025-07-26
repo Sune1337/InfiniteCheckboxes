@@ -1,0 +1,86 @@
+<ng-template #headerTemplate>
+  <div class="header">
+    <div class="flex-container">
+      <div>
+        <a href="javascript:void(0)" (click)="helpDialog.showModal()"><span class="help-link">?</span></a>
+      </div>
+
+      @if (minesweeper(); as minesweeper) {
+        @if (minesweeper.EndUtc) {
+          @if (minesweeper.Win) {
+            <div>You won!</div>
+          } @else {
+            <div>Game over!</div>
+          }
+        } @else {
+          <div>
+            GAME ON
+          </div>
+        }
+      } @else {
+        <div>
+          Create a new game to start playing
+        </div>
+      }
+    </div>
+  </div>
+</ng-template>
+
+<div class="minesweeper-container">
+  @if (!minesweeper()) {
+    <div class="new-game-container">
+      <table>
+        <tr>
+          <td>Game-size:</td>
+          <td>
+            <select [(ngModel)]="selectedWidth">
+              @for (width of widthOptions; track width; let index = $index) {
+                <option value="{{width}}" [selected]="index == 0">{{ width }} x {{ width }}</option>
+              }
+            </select>
+          </td>
+        </tr>
+
+        <tr>
+          <td>Number of mines:</td>
+          <td>
+            <select [(ngModel)]="selectedNumberOfMines">
+              @for (noMines of minesOptions(); track noMines; let index = $index) {
+                <option value="{{noMines}}" [selected]="index == 0">{{ noMines }}</option>
+              }
+            </select>
+          </td>
+        </tr>
+
+        <tr>
+          <td></td>
+          <td>
+            <button (click)="whenStartClick()">Start!</button>
+          </td>
+        </tr>
+      </table>
+    </div>
+  } @else {
+    <div class="checkbox-container">
+      @if (minesweeper(); as minesweeper) {
+        <app-checkbox-grid
+          [gridWidth]="minesweeper.Width"
+          [maxSize]="minesweeper.Width * minesweeper.Width"
+          [locationId]="`0x${minesweeper.SweepLocationId}`"
+          (contextClick)="whenRightMouseButtonClick($event)"
+          [checkboxStyles]="(checkboxStyles | async) || []"
+        >
+        </app-checkbox-grid>
+      }
+    </div>
+  }
+</div>
+
+<dialog #helpDialog id="help-dialog" (click)="whenDialogClick($event, helpDialog)">
+  <div class="help-dialog-content">
+    <h3>Minesweeper</h3>
+    <p>
+      tbd: instructions
+    </p>
+  </div>
+</dialog>

@@ -17,34 +17,35 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.7" />
-        <PackageReference Include="Microsoft.Orleans.Hosting.Kubernetes" Version="9.2.1" />
-        <PackageReference Include="Microsoft.Orleans.Server" Version="9.2.1" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.7"/>
+        <PackageReference Include="Microsoft.Orleans.Hosting.Kubernetes" Version="9.2.1"/>
+        <PackageReference Include="Microsoft.Orleans.Server" Version="9.2.1"/>
         <PackageReference Include="OpenTelemetry" Version="1.12.0"/>
         <PackageReference Include="Orleans.Providers.MongoDB" Version="9.1.0"/>
         <PackageReference Include="OrleansDashboard" Version="8.2.0"/>
         <PackageReference Include="prometheus-net" Version="8.2.1"/>
-        <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
-        <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
-        <PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="8.3.1" />
+        <PackageReference Include="Serilog.AspNetCore" Version="9.0.0"/>
+        <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1"/>
+        <PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="8.3.1"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\CheckboxGrain\CheckboxGrain.csproj" />
-      <ProjectReference Include="..\GoldDiggerGrain\GoldDiggerGrain.csproj" />
-      <ProjectReference Include="..\GrainInterfaces\GrainInterfaces.csproj" />
-      <ProjectReference Include="..\HighscoreGrain\HighscoreGrain.csproj" />
-      <ProjectReference Include="..\RedisMessages\RedisMessages.csproj" />
-      <ProjectReference Include="..\RngWithSecret\RngWithSecret.csproj" />
-      <ProjectReference Include="..\StatisticsGrain\StatisticsGrain.csproj" />
-      <ProjectReference Include="..\UserGrain\UserGrain.csproj" />
-      <ProjectReference Include="..\WarGrain\WarGrain.csproj" />
+        <ProjectReference Include="..\CheckboxGrain\CheckboxGrain.csproj"/>
+        <ProjectReference Include="..\GoldDiggerGrain\GoldDiggerGrain.csproj"/>
+        <ProjectReference Include="..\GrainInterfaces\GrainInterfaces.csproj"/>
+        <ProjectReference Include="..\HighscoreGrain\HighscoreGrain.csproj"/>
+        <ProjectReference Include="..\MinesweeperGrain\MinesweeperGrain.csproj"/>
+        <ProjectReference Include="..\RedisMessages\RedisMessages.csproj"/>
+        <ProjectReference Include="..\RngWithSecret\RngWithSecret.csproj"/>
+        <ProjectReference Include="..\StatisticsGrain\StatisticsGrain.csproj"/>
+        <ProjectReference Include="..\UserGrain\UserGrain.csproj"/>
+        <ProjectReference Include="..\WarGrain\WarGrain.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="..\.dockerignore">
-        <Link>.dockerignore</Link>
-      </Content>
+        <Content Include="..\.dockerignore">
+            <Link>.dockerignore</Link>
+        </Content>
     </ItemGroup>
 
 </Project>

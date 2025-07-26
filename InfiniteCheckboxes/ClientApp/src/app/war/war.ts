@@ -46,7 +46,7 @@ export class WarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.title.setTitle('Checkbox war');
     this.meta.updateTag({ name: 'description', content: 'Play the checkbox war in real-time with warriors from all over the world. The goal is to check or uncheck all the checkboxes.' });
 
-    // Register callback to handle updates to checkbox-pages.
+    // Register callback to handle updates to wars.
     this.warHubService.wars
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe(wars => this.warUpdated(wars));

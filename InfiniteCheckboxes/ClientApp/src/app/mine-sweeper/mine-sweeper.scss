@@ -1,0 +1,212 @@
+.header {
+  .war-link {
+    margin-left: 1rem;
+  }
+}
+
+.help-dialog-content {
+  text-align: left;
+}
+
+.minesweeper-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.new-game-container {
+
+}
+
+.checkbox-container {
+  width: 100%;
+  height: 100%;
+}
+
+/* flag */
+::ng-deep input[type="checkbox"]:not(:checked).flag {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 35%;
+    top: 0%;
+    width: 3px;
+    height: 17px;
+    background: black;
+    transform: translateX(-50%);
+
+    @media (prefers-color-scheme: dark) {
+      background: #bdbdbd;
+    }
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 40%;
+    top: 10%;
+    width: 12px;
+    height: 8px;
+    background: red;
+    clip-path: polygon(0 0, 100% 50%, 0 100%);
+  }
+}
+
+/* mine */
+::ng-deep input[type="checkbox"].mine {
+  position: relative;
+  appearance: none;
+
+  &::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: // Center dot
+      radial-gradient(circle at center, black 0, black 7px, transparent 7px),
+        // Spikes in a circular pattern
+      repeating-conic-gradient(
+          from 0deg,
+          black 0deg 35deg,
+          transparent 35deg 60deg
+      );
+    border-radius: 50%;
+
+    @media (prefers-color-scheme: dark) {
+      background: // Center dot
+        radial-gradient(circle at center, #bdbdbd 0, #bdbdbd 7px, transparent 7px),
+          // Spikes in a circular pattern
+        repeating-conic-gradient(
+            from 0deg,
+            #bdbdbd 0deg 35deg,
+            transparent 35deg 60deg
+        );
+    }
+  }
+
+  &:checked::before {
+    background: // Center dot
+      radial-gradient(circle at center, #ff0000 0, #ff0000 7px, transparent 7px),
+        // Spikes in a circular pattern
+      repeating-conic-gradient(
+          from 0deg,
+          #ff0000 0deg 35deg,
+          transparent 35deg 60deg
+      );
+
+    @media (prefers-color-scheme: dark) {
+      background: // Center dot
+        radial-gradient(circle at center, #ff0000 0, #ff0000 7px, transparent 7px),
+          // Spikes in a circular pattern
+        repeating-conic-gradient(
+            from 0deg,
+            #ff0000 0deg 35deg,
+            transparent 35deg 60deg
+        );
+    }
+  }
+
+
+}
+
+/* counts */
+::ng-deep input[type="checkbox"][class*="count-"]:checked {
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border: 1px solid #ccc;
+  background: #fff;
+  position: relative;
+  cursor: pointer;
+
+  @for $i from 1 through 8 {
+    &.count-#{$i} {
+      &::after {
+        content: '#{$i}';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-family: 'Arial', sans-serif;
+        font-size: 14px;
+        font-weight: bold;
+
+        @if $i == 1 {
+          color: #0000FF;
+        }
+        @if $i == 2 {
+          color: #008000;
+        }
+        @if $i == 3 {
+          color: #FF0000;
+        }
+        @if $i == 4 {
+          color: #000080;
+        }
+        @if $i == 5 {
+          color: #800000;
+        }
+        @if $i == 6 {
+          color: #008080;
+        }
+        @if $i == 7 {
+          color: #000000;
+        }
+        @if $i == 8 {
+          color: #808080;
+        }
+      }
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    background: #333;
+    border-color: #666;
+
+    @for $i from 1 through 8 {
+      &.count-#{$i}::after {
+        @if $i == 1 {
+          color: #6666FF;
+        }
+        @if $i == 2 {
+          color: #00FF00;
+        }
+        @if $i == 3 {
+          color: #FF6666;
+        }
+        @if $i == 4 {
+          color: #6666FF;
+        }
+        @if $i == 5 {
+          color: #FF6666;
+        }
+        @if $i == 6 {
+          color: #00FFFF;
+        }
+        @if $i == 7 {
+          color: #FFFFFF;
+        }
+        @if $i == 8 {
+          color: #CCCCCC;
+        }
+      }
+    }
+  }
+
+  &:checked {
+    background-color: #e6e6e6;
+
+    @media (prefers-color-scheme: dark) {
+      background-color: #444;
+    }
+  }
+}

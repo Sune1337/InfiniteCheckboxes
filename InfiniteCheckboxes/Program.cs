@@ -5,6 +5,9 @@ using CheckboxHubv1.Options;
 
 using InfiniteCheckboxes.Utils;
 
+using MinesweeperHub;
+using MinesweeperHub.Options;
+
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 
@@ -29,6 +32,7 @@ builder.Host
 builder.Services.Configure<CheckboxObserverOptions>(o => o.RedisConnectionString = builder.Configuration.GetConnectionString("PubSubRedis"));
 builder.Services.Configure<UserObserverOptions>(o => o.RedisConnectionString = builder.Configuration.GetConnectionString("PubSubRedis"));
 builder.Services.Configure<WarObserverOptions>(o => o.RedisConnectionString = builder.Configuration.GetConnectionString("PubSubRedis"));
+builder.Services.Configure<MinesweeperObserverOptions>(o => o.RedisConnectionString = builder.Configuration.GetConnectionString("PubSubRedis"));
 
 // Start the Orleans client before services that might use it.
 builder.UseOrleansClient(clientBuilder =>
@@ -61,6 +65,7 @@ builder.Services.AddControllers();
 builder.Services.AddDefaultExceptionHandler();
 builder.Services.AddCheckboxServices();
 builder.Services.AddWarObserverService();
+builder.Services.AddMinesweeperObserverService();
 builder.Services.AddHsts(options => { options.MaxAge = TimeSpan.FromDays(365); });
 builder.Services.AddLazyCache();
 
@@ -92,6 +97,7 @@ app.UseAuthorization();
 // Map SignalR hubs.
 app.MapCheckboxHubv1("/hubs/v1/CheckboxHub");
 app.MapWarHubv1("/hubs/v1/WarHub");
+app.MapMinesweeperHubv1("/hubs/v1/MinesweeperHub");
 
 // If we use MVC controllers.
 app.MapControllerRoute(

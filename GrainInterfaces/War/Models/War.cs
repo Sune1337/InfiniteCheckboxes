@@ -3,7 +3,7 @@ namespace GrainInterfaces.War.Models;
 [GenerateSerializer]
 public class War
 {
-    #region Do not
+    #region Do not reorder
 
     [Id(0)]
     public required long Id { get; set; }

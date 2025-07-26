@@ -21,6 +21,7 @@ images:
     pullPolicy: IfNotPresent
     metricsServerPort:
 #    goldDiggerRngSecret: "<Key for HMACSHA256 in hex>"
+#    minesweeperRngSecret: "<Key for HMACSHA256 in hex>"
 #    serilog:
 #      Serilog__Using__0: "Serilog.Sinks.Grafana.Loki"
 #      Serilog__WriteTo__0__Name: "GrafanaLoki"

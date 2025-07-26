@@ -51,6 +51,10 @@ public class DebounceValues<TKey, TValue> where TKey : notnull
         {
             _values[index] = value;
             _emitValuesTask ??= EmitValuesTask();
+            if (_emitValuesTask.IsCompleted)
+            {
+                _emitValuesTask = null;
+            }
         }
     }
 

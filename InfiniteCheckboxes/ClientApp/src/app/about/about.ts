@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, inject, TemplateRef, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, inject, OnDestroy, TemplateRef, ViewChild } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { HeaderService } from '../../utils/header.service';
 import { RouterLink } from '@angular/router';
@@ -11,7 +11,7 @@ import { RouterLink } from '@angular/router';
   templateUrl: './about.html',
   styleUrl: './about.scss'
 })
-export class About implements AfterViewInit {
+export class About implements AfterViewInit, OnDestroy {
 
   @ViewChild('headerTemplate')
   private headerTemplate!: TemplateRef<unknown>;
@@ -28,6 +28,10 @@ export class About implements AfterViewInit {
   ngAfterViewInit(): void {
     // Set header template.
     this.headerService.setHeader(this.headerTemplate);
+  }
+
+  ngOnDestroy() {
+    this.headerService.setHeader(null);
   }
 
 }

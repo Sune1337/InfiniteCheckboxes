@@ -40,7 +40,7 @@ public class WarGameGrain : Grain, IWarGameGrain, ICheckboxCallbackGrain
 
     public async Task<War> CreateWar(int battleFieldWidth)
     {
-        _warGameState.State.WarLocationId = Generate256BitHex();
+        _warGameState.State.WarLocationId = Random256Bit.GenerateHex();
         _warGameState.State.CreatedUtc = DateTime.UtcNow;
         _warGameState.State.BattlefieldWidth = battleFieldWidth;
 
@@ -67,21 +67,21 @@ public class WarGameGrain : Grain, IWarGameGrain, ICheckboxCallbackGrain
         return Task.CompletedTask;
     }
 
-    public async Task WhenCheckboxesUpdated(bool[] checkboxes, int index, bool value)
+    public async Task<Dictionary<int, bool>?> WhenCheckboxesUpdated(string id, bool[] checkboxes, int index, bool value)
     {
         if (_warGameState.State.EndUtc != null)
         {
             throw new Exception("War has ended!");
         }
 
-        // Register when war started.
-        _warGameState.State.StartUtc ??= DateTime.UtcNow;
-
         var battlefieldSize = _warGameState.State.BattlefieldWidth * _warGameState.State.BattlefieldWidth;
         if (index < 0 || index >= battlefieldSize)
         {
             throw new Exception("Stick to the battlefield!");
         }
+
+        // Register when war started.
+        _warGameState.State.StartUtc ??= DateTime.UtcNow;
 
         var countChecked = 0;
         var countUnchecked = 0;
@@ -115,23 +115,12 @@ public class WarGameGrain : Grain, IWarGameGrain, ICheckboxCallbackGrain
         }
 
         await WriteStateAndPublishAsync();
+        return null;
     }
 
     #endregion
 
     #region Methods
-
-    private static string Generate256BitHex()
-    {
-        // Create a byte array to hold 32 bytes (256 bits)
-        var bytes = new byte[32];
-
-        // Fill it with cryptographically strong random bytes
-        using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(bytes);
-
-        return Convert.ToHexStringLower(bytes).TrimLeadingZeroPairs();
-    }
 
     private byte[] CreateRandomBattlefield(int gameSize)
     {

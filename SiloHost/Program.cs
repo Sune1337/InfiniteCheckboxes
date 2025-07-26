@@ -29,6 +29,7 @@ var builder = Host.CreateDefaultBuilder(args)
         // Configure options.
         serviceCollection.Configure<RedisMessagePublisherOptions>(o => o.RedisConnectionString = hostBuilderContext.Configuration.GetConnectionString("PubSubRedis"));
         serviceCollection.Configure<SecretPcg32Options>("GoldDiggerRng", hostBuilderContext.Configuration.GetSection("GoldDiggerRng"));
+        serviceCollection.Configure<SecretPcg32Options>("MinesweeperRng", hostBuilderContext.Configuration.GetSection("MinesweeperRng"));
 
         // Add services.
         serviceCollection.AddRedisMessagePublishers();
@@ -92,6 +93,11 @@ var builder = Host.CreateDefaultBuilder(args)
             .AddMongoDBGrainStorage("HighscoreStore", options =>
             {
                 options.DatabaseName = "HighscoreGrains";
+                options.CreateShardKeyForCosmos = false;
+            })
+            .AddMongoDBGrainStorage("MinesweeperStore", options =>
+            {
+                options.DatabaseName = "MinesweeperGrains";
                 options.CreateShardKeyForCosmos = false;
             })
             .ConfigureEndpoints(TcpPorts.GetNextFreeTcpPort(11111), TcpPorts.GetNextFreeTcpPort(30000))

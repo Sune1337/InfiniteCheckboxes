@@ -51,6 +51,10 @@ public class DebounceValues<TValue>
         {
             _value = value;
             _emitValuesTask ??= EmitValueTask();
+            if (_emitValuesTask.IsCompleted)
+            {
+                _emitValuesTask = null;
+            }
         }
     }
 

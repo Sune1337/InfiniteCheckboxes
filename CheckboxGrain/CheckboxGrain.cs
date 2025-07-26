@@ -73,11 +73,30 @@ public class CheckboxGrain : Grain, ICheckboxGrain
         if (_decompressedData[index] != normalValue)
         {
             // The checkbox state changed.
+            var extraChecked = 0;
+            var extraUnchecked = 0;
+            Dictionary<int, bool>? checkedFromCallback = null;
             if (_checkboxState.State.CallbackGrain != null)
             {
                 // Invoke callback.
                 var checkboxCallbackGrain = GrainFactory.GetGrain<ICheckboxCallbackGrain>(_checkboxState.State.CallbackGrain.Value);
-                await checkboxCallbackGrain.WhenCheckboxesUpdated(_decompressedData, index, normalValue);
+                checkedFromCallback = await checkboxCallbackGrain.WhenCheckboxesUpdated(_grainId, _decompressedData, index, normalValue);
+                if (checkedFromCallback != null)
+                    foreach (var (i, v) in checkedFromCallback)
+                    {
+                        if (_decompressedData[i] != v)
+                        {
+                            _decompressedData[i] = v;
+                            if (v)
+                            {
+                                extraChecked++;
+                            }
+                            else
+                            {
+                                extraUnchecked++;
+                            }
+                        }
+                    }
             }
             else if (normalValue)
             {
@@ -92,10 +111,17 @@ public class CheckboxGrain : Grain, ICheckboxGrain
 
             // Update statistics.
             var checkUncheckCounter = GrainFactory.GetGrain<IUserCheckUncheckCounterGrain>(userId);
-            await checkUncheckCounter.AddCheckUncheck(normalValue ? 1 : 0, normalValue ? 0 : 1);
-        }
+            await checkUncheckCounter.AddCheckUncheck((normalValue ? 1 : 0) + extraChecked, (normalValue ? 0 : 1) + extraUnchecked);
 
-        await _redisCheckboxUpdatePublisherManager.PublishCheckboxUpdateAsync(_grainId, index, normalValue);
+            await _redisCheckboxUpdatePublisherManager.PublishCheckboxUpdateAsync(_grainId, index, normalValue);
+            if (checkedFromCallback != null)
+            {
+                foreach (var (i, v) in checkedFromCallback)
+                {
+                    await _redisCheckboxUpdatePublisherManager.PublishCheckboxUpdateAsync(_grainId, i, v);
+                }
+            }
+        }
     }
 
     public async Task SetCheckboxes(byte[] checkboxes)

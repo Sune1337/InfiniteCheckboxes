@@ -75,33 +75,6 @@ public static partial class Two56BitIdParser
         return hex.Substring(startIndex);
     }
 
-    public static bool TryParse256BitBase64Id(this string? base64Id, out string parsedId)
-    {
-        parsedId = string.Empty;
-
-        if (string.IsNullOrWhiteSpace(base64Id))
-        {
-            return false;
-        }
-
-        // Max base64 length of 256bits data is 44 chars including padding.
-        if (base64Id.Length > 44)
-        {
-            return false;
-        }
-
-        try
-        {
-            parsedId = Convert.ToHexStringLower(Convert.FromBase64String(base64Id)).TrimLeadingZeroPairs();
-            return true;
-        }
-
-        catch
-        {
-            return false;
-        }
-    }
-
     public static bool Validate256BitHex(this string? hexString)
     {
         return hexString != null && Two56BitHexStringRegex.IsMatch(hexString);

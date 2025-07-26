@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, OnDestroy, signal, ViewChild, WritableSignal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, OnDestroy, output, signal, ViewChild, WritableSignal } from '@angular/core';
 import { CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
 import { Subject, takeUntil } from 'rxjs';
 import { CheckboxesHubService, CheckboxPages, GoldSpots } from '../../api/checkboxes-hub.service';
@@ -9,6 +9,7 @@ interface CheckboxPage {
   pageId: bigint;
   state: WritableSignal<boolean[]>;
   goldSpots: WritableSignal<number[]>;
+  checkboxStyles: WritableSignal<(string | null)[]>;
 }
 
 @Component({
@@ -28,6 +29,9 @@ export class CheckboxGrid implements OnDestroy {
   public gridWidth = input(32);
   public maxSize = input(0);
   public subscribeToStatistics = input(false);
+  public locationId = input<string | null>(null);
+  public contextClick = output<number>();
+  public checkboxStyles = input<(string | null)[]>([]);
 
   // Generate grid-template-columns value.
   protected gridColumns = computed(() => `repeat(${this.gridWidth()}, 24px)`);
@@ -64,6 +68,23 @@ export class CheckboxGrid implements OnDestroy {
 
     // Handle changes to page-width.
     effect(() => this.whenPageWidthChange(this.gridWidth()));
+
+    // Navigate to page from input.
+    effect(() => {
+      const id = this.locationId();
+      if (id) {
+        this.navigateToPage(id);
+      }
+    });
+
+    let lastCheckboxStyles = this.checkboxStyles();
+    // Combine checkboxStyles and checkboxes when styles change.
+    effect(() => {
+      if (this.checkboxStyles() !== lastCheckboxStyles) {
+        this.combineCheckboxStyles(this.checkboxStyles());
+        lastCheckboxStyles = this.checkboxStyles();
+      }
+    });
   }
 
   ngOnDestroy() {
@@ -130,21 +151,67 @@ export class CheckboxGrid implements OnDestroy {
     this.syncSubscriptions(renderedRange.start + addedItems, renderedRange.end + addedItems);
   }
 
-  protected whenCheckboxChanged = async (id: bigint, index: number, event: Event): Promise<void> => {
+  protected whenCheckboxChanged = async (event: Event): Promise<void> => {
+    const checkbox = event.target as HTMLInputElement;
+    if (checkbox.tagName !== 'INPUT') {
+      return;
+    }
+
     const checkboxElement = event.target as HTMLInputElement;
     const isChecked = checkboxElement.checked;
 
+    const index = parseInt(checkbox.getAttribute('data-index') ?? '', 10);
+    if (isNaN(index)) {
+      return;
+    }
+
+    const pageId = checkboxElement.closest('.checkbox-grid')?.getAttribute('page-id')
+    if (!pageId) {
+      return;
+    }
+
     try {
-      await this.checkboxHubService.setChecked(id, index, isChecked);
+      await this.checkboxHubService.setChecked(BigInt(pageId), index, isChecked);
     } catch (error: any) {
       checkboxElement.checked = !isChecked
       alert(getErrorMessage(error));
     }
   }
 
+  protected whenContextMenu = (event: Event): void => {
+    const checkbox = event.target as HTMLInputElement;
+    if (checkbox.tagName !== 'INPUT') {
+      return;
+    }
+
+    const index = parseInt(checkbox.getAttribute('data-index') ?? '', 10);
+    if (isNaN(index)) {
+      return;
+    }
+
+    event.preventDefault();
+    this.contextClick.emit(index);
+  }
+
+
   protected trackCheckboxPage = (index: number, item: CheckboxPage): any => {
     return item.pageId;
   }
+
+  protected getCheckboxClasses = (index: number, goldSpots: number[], checkboxStyles: (string | null)[]): { [p: string]: boolean } => {
+    const result: { [key: string]: boolean } = {};
+    if (goldSpots.includes(index)) {
+      result['gold-spot'] = true;
+    }
+
+    const checkboxStyle = checkboxStyles[index];
+    if (checkboxStyle) {
+      result[checkboxStyle] = true;
+    }
+
+    return result;
+  }
+
 
   private syncSubscriptions = (start: number, end: number): void => {
     const data = this.checkBoxPages();
@@ -182,6 +249,7 @@ export class CheckboxGrid implements OnDestroy {
       for (const item of checkboxPages) {
         if (item.pageId === id) {
           item.state.set(updatedCheckboxPages[key]);
+          item.checkboxStyles.set(this.checkboxStyles());
         }
       }
     }
@@ -271,11 +339,25 @@ export class CheckboxGrid implements OnDestroy {
     return newItems.length;
   }
 
+  private combineCheckboxStyles = (checkboxStyles: (string | null)[]): void => {
+    const checkboxPages = this.checkBoxPages();
+    if (!checkboxPages || !checkboxStyles) {
+      return;
+    }
+
+    for (const checkboxPage of checkboxPages) {
+      checkboxPage.checkboxStyles.set(checkboxStyles);
+    }
+
+    this.checkBoxPages.set([...checkboxPages]);
+  }
+
   private createCheckboxPage(pageId: bigint): CheckboxPage {
     return {
       pageId: pageId,
       state: signal(Array(4096)),
-      goldSpots: signal([])
+      goldSpots: signal([]),
+      checkboxStyles: signal([])
     };
   }
 

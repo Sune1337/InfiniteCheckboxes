@@ -23,6 +23,7 @@ WORKDIR /src
 COPY ["InfiniteCheckboxes/", "InfiniteCheckboxes/"]
 COPY ["CheckboxHubv1/", "CheckboxHubv1/"]
 COPY ["WarHubv1/", "WarHubv1/"]
+COPY ["MinesweeperHubv1/", "MinesweeperHubv1/"]
 COPY ["UserAPIv1/", "UserAPIv1/"]
 COPY ["HighscoreAPIv1/", "HighscoreAPIv1/"]
 COPY ["GrainInterfaces/", "GrainInterfaces/"]
