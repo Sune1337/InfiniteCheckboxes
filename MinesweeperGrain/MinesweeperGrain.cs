@@ -194,22 +194,19 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
             await _redisMinesweeperUpdatePublisherManager.PublishMinesweeperAsync(_grainId, MinesweeperStateToMinesweeper());
             return null;
         }
-
-        // Count checks to see is game is done.
-        var countChecked = 1;
-        for (var i = 0; i < gameSize; i++)
-        {
-            if (checkboxes[i])
-            {
-                countChecked++;
-            }
-        }
+        
+        // Check the current location.
+        checkboxes[index] = true;
 
         // Count surrounding mines.
         var mineCounts = new Dictionary<int, int>();
         Dictionary<int, bool>? result = null;
         var numberOfSurroundingMines = CountSurroundingMines(_minesweeperState.State.Mines, uIndex, width);
-        if (numberOfSurroundingMines == 0)
+        if (numberOfSurroundingMines > 0)
+        {
+            mineCounts.Add(index, numberOfSurroundingMines);
+        }
+        else
         {
             // Autoplay.
             var sweeped = AutoPlay(checkboxes, _minesweeperState.State.Mines, uIndex, width);
@@ -226,16 +223,20 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
             }
         }
 
-        var count2 = CountSurroundingMines(_minesweeperState.State.Mines, (uint)index, width);
-        if (count2 > 0)
-        {
-            mineCounts.Add(index, count2);
-        }
-
         if (mineCounts.Count > 0)
         {
             // Publish new counts.
             await _redisMinesweeperUpdatePublisherManager.PublishCountsAsync(_grainId, mineCounts);
+        }
+
+        // Count checks to see is game is done.
+        var countChecked = 0;
+        for (var i = 0; i < gameSize; i++)
+        {
+            if (checkboxes[i])
+            {
+                countChecked++;
+            }
         }
 
         if (countChecked == gameSize - _minesweeperState.State.Mines.Count)
@@ -271,8 +272,6 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
                 var minesweeperHighscoreGrain = GrainFactory.GetGrain<IHighscoreCollectorGrain>(HighscoreLists.Minesweeper);
                 await minesweeperHighscoreGrain.UpdateScore(_minesweeperState.State.UserId, _minesweeperState.State.Score.Value);
             }
-
-            return null;
         }
 
         return result;
@@ -322,6 +321,7 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
             {
                 if (!checkboxes[neighborIndex] && !autoChecked.Contains(neighborIndex))
                 {
+                    checkboxes[(int)neighborIndex] = true;
                     autoChecked.Add(neighborIndex);
                 }
             }
