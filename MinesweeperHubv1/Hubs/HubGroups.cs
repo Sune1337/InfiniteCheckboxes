@@ -1,4 +1,4 @@
-namespace MinesweeperHub.Hubs;
+namespace MinesweeperHubv1.Hubs;
 
 public static class HubGroups
 {

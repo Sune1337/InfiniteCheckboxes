@@ -1,4 +1,4 @@
-namespace MinesweeperHub.MinesweeperObserver;
+namespace MinesweeperHubv1.MinesweeperObserver;
 
 using System.Text.Json;
 
@@ -7,8 +7,8 @@ using GrainInterfaces.Minesweeper.Models;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
 
-using MinesweeperHub.Hubs;
-using MinesweeperHub.Options;
+using MinesweeperHubv1.Hubs;
+using MinesweeperHubv1.Options;
 
 using StackExchange.Redis;
 

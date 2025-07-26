@@ -1,13 +1,13 @@
-namespace MinesweeperHub.Hubs;
+namespace MinesweeperHubv1.Hubs;
 
 using System.Security.Claims;
-
-using global::MinesweeperHub.MinesweeperObserver;
 
 using GrainInterfaces.Minesweeper;
 using GrainInterfaces.Minesweeper.Models;
 
 using Microsoft.AspNetCore.SignalR;
+
+using MinesweeperHubv1.MinesweeperObserver;
 
 using Two56bitId;
 

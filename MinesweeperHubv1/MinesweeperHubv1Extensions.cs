@@ -1,7 +1,7 @@
-namespace MinesweeperHub;
+namespace MinesweeperHubv1;
 
-using MinesweeperHub.Hubs;
-using MinesweeperHub.MinesweeperObserver;
+using MinesweeperHubv1.Hubs;
+using MinesweeperHubv1.MinesweeperObserver;
 
 public static class MinesweeperHubv1Extensions
 {

@@ -5,8 +5,8 @@ using CheckboxHubv1.Options;
 
 using InfiniteCheckboxes.Utils;
 
-using MinesweeperHub;
-using MinesweeperHub.Options;
+using MinesweeperHubv1;
+using MinesweeperHubv1.Options;
 
 using OpenTelemetry;
 using OpenTelemetry.Metrics;

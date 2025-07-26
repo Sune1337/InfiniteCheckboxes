@@ -61,7 +61,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitCoding", "BitCoding\BitC
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinesweeperGrain", "MinesweeperGrain\MinesweeperGrain.csproj", "{DA269F12-A7F3-4824-9EEB-7C6CE9BEA0BB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinesweeperHub", "MinesweeperHub\MinesweeperHub.csproj", "{8E026A5A-FD6C-4DBB-8E58-EC8883F5D292}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinesweeperHubv1", "MinesweeperHubv1\MinesweeperHubv1.csproj", "{8E026A5A-FD6C-4DBB-8E58-EC8883F5D292}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

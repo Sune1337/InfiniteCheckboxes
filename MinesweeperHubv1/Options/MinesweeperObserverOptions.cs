@@ -1,4 +1,4 @@
-namespace MinesweeperHub.Options;
+namespace MinesweeperHubv1.Options;
 
 public class MinesweeperObserverOptions
 {

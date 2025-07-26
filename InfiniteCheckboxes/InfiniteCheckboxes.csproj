@@ -18,7 +18,7 @@
         <ProjectReference Include="..\APIKeyAuthentication\APIKeyAuthentication.csproj"/>
         <ProjectReference Include="..\CheckboxHubv1\CheckboxHubv1.csproj"/>
         <ProjectReference Include="..\HighscoreAPIv1\HighscoreAPIv1.csproj"/>
-        <ProjectReference Include="..\MinesweeperHub\MinesweeperHub.csproj"/>
+        <ProjectReference Include="..\MinesweeperHubv1\MinesweeperHubv1.csproj" />
         <ProjectReference Include="..\UserAPIv1\UserAPIv1.csproj"/>
         <ProjectReference Include="..\WarHubv1\WarHubv1.csproj"/>
     </ItemGroup>

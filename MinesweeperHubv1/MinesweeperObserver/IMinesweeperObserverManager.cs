@@ -1,4 +1,4 @@
-namespace MinesweeperHub.MinesweeperObserver;
+namespace MinesweeperHubv1.MinesweeperObserver;
 
 public interface IMinesweeperObserverManager
 {
