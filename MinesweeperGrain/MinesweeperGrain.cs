@@ -5,6 +5,7 @@ using BitCoding;
 using global::MinesweeperGrain.Models;
 
 using GrainInterfaces;
+using GrainInterfaces.Highscore;
 using GrainInterfaces.Minesweeper;
 using GrainInterfaces.Minesweeper.Models;
 
@@ -61,7 +62,7 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
         }
 
         var gameSize = width * width;
-        if (numberOfMines < 1 || numberOfMines > gameSize / 2)
+        if (numberOfMines < width || numberOfMines > gameSize * 0.25)
         {
             throw new ArgumentOutOfRangeException(nameof(numberOfMines));
         }
@@ -142,8 +143,8 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
         }
 
         var width = _minesweeperState.State.Width.Value;
-        var battlefieldSize = width * width;
-        if (index < 0 || index >= battlefieldSize)
+        var gameSize = width * width;
+        if (index < 0 || index >= gameSize)
         {
             throw new Exception("Stick to the game-area!");
         }
@@ -191,7 +192,7 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
 
         // Count checks to see is game is done.
         var countChecked = 1;
-        for (var i = 0; i < battlefieldSize; i++)
+        for (var i = 0; i < gameSize; i++)
         {
             if (checkboxes[i])
             {
@@ -232,13 +233,40 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
             await _redisMinesweeperUpdatePublisherManager.PublishCountsAsync(_grainId, mineCounts);
         }
 
-        if (countChecked == battlefieldSize - _minesweeperState.State.Mines.Count)
+        if (countChecked == gameSize - _minesweeperState.State.Mines.Count)
         {
             // User finished!
             _minesweeperState.State.EndUtc = DateTime.UtcNow;
-            _minesweeperState.State.Win = true;
+            var playTime = (_minesweeperState.State.EndUtc.Value - _minesweeperState.State.StartUtc.Value).TotalSeconds;
+
+            // First calculate the density score multiplier
+            var minDensity = width / (double)(width * width);
+            var maxDensity = 0.25;
+            var actualDensity = _minesweeperState.State.Mines.Count / (double)(width * width);
+
+            // Scale from 1 to 10 based on where the density falls between min and max
+            var densityMultiplier = 1 + (9 * (actualDensity - minDensity) / (maxDensity - minDensity));
+
+            // Base score uses mines and time
+            var baseScore = (_minesweeperState.State.Mines.Count * densityMultiplier) / playTime;
+
+            // Linear scaling with board size (using 8x8 as baseline)
+            var sizeMultiplier = (double)width / 8;
+
+            // Final score
+            _minesweeperState.State.Score = (ulong)Math.Round(baseScore * sizeMultiplier * 10);
+
+
             await _minesweeperState.WriteStateAsync();
             await _redisMinesweeperUpdatePublisherManager.PublishMinesweeperAsync(_grainId, MinesweeperStateToMinesweeper());
+
+            if (_minesweeperState.State.UserId != null)
+            {
+                // Update high score.
+                var minesweeperHighscoreGrain = GrainFactory.GetGrain<IHighscoreCollectorGrain>(HighscoreLists.Minesweeper);
+                await minesweeperHighscoreGrain.UpdateScore(_minesweeperState.State.UserId, _minesweeperState.State.Score.Value);
+            }
+
             return null;
         }
 
@@ -386,7 +414,7 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
             EndUtc = _minesweeperState.State.EndUtc,
             Mines = _minesweeperState.State.EndUtc == null ? null : _minesweeperState.State.Mines.Select(kv => kv.Key).ToArray(),
             MineCounts = mineCounts,
-            Win = _minesweeperState.State.Win == true
+            Score = _minesweeperState.State.Score
         };
     }
 

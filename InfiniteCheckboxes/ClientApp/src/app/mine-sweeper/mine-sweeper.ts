@@ -222,7 +222,7 @@ export class MinesweeperComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private createNumberOfMinesOptions(width: number): number[] {
-    const end = width * width / 2;
+    const end = (width * width) * 0.25;
     const result: number[] = [];
     for (let i = width; i <= end; i++) {
       result.push(i);

@@ -8,5 +8,5 @@ export interface Minesweeper {
   EndUtc?: Date;
   Mines?: number[];
   MineCounts?: { [id: number]: number };
-  Win: boolean;
+  Score?: number;
 }

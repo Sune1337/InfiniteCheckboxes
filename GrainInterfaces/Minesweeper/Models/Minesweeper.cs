@@ -33,7 +33,7 @@ public class Minesweeper
     public Dictionary<int, int>? MineCounts { get; set; }
 
     [Id(9)]
-    public bool Win { get; set; }
+    public ulong? Score { get; set; }
 
     #endregion
 }

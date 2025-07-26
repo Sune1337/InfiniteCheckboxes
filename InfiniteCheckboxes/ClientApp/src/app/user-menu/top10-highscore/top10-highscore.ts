@@ -22,6 +22,7 @@ export class Top10Highscore implements OnDestroy {
   protected checkersHighscore = signal<Highscore | null>(null);
   protected uncheckersHighscore = signal<Highscore | null>(null);
   protected goldDiggersHighscore = signal<Highscore | null>(null);
+  protected minesweeperHighscore = signal<Highscore | null>(null);
 
   private getHighscoresSubscription?: Subscription;
 
@@ -58,6 +59,10 @@ export class Top10Highscore implements OnDestroy {
 
             case "GoldDigger":
               this.goldDiggersHighscore.set(highscore);
+              break;
+
+            case "Minesweeper":
+              this.minesweeperHighscore.set(highscore);
               break;
           }
         }

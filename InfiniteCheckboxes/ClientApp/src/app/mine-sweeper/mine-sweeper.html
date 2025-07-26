@@ -7,8 +7,8 @@
 
       @if (minesweeper(); as minesweeper) {
         @if (minesweeper.EndUtc) {
-          @if (minesweeper.Win) {
-            <div>You won!</div>
+          @if (minesweeper.Score) {
+            <div>You won! Score: {{ minesweeper.Score }}</div>
           } @else {
             <div>Game over!</div>
           }

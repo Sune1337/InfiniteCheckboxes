@@ -51,21 +51,25 @@ public class HighscoreAPI : ControllerBase
         var checkedHighscoreGrain = _grainFactory.GetGrain<IHighscoreGrain>(HighscoreLists.Checked);
         var uncheckedHighscoreGrain = _grainFactory.GetGrain<IHighscoreGrain>(HighscoreLists.Unchecked);
         var goldDiggerHighscoreGrain = _grainFactory.GetGrain<IHighscoreGrain>(HighscoreLists.GoldDigger);
+        var minesweeperHighscoreGrain = _grainFactory.GetGrain<IHighscoreGrain>(HighscoreLists.Minesweeper);
 
         Task<Dictionary<string, ulong>> checkedHighscoresTask;
         Task<Dictionary<string, ulong>> uncheckedHighscoresTask;
         Task<Dictionary<string, ulong>> goldDiggerHighscoreTask;
+        Task<Dictionary<string, ulong>> minesweeperHighscoreTask;
         await Task.WhenAll(
             checkedHighscoresTask = checkedHighscoreGrain.GetScores(),
             uncheckedHighscoresTask = uncheckedHighscoreGrain.GetScores(),
-            goldDiggerHighscoreTask = goldDiggerHighscoreGrain.GetScores()
+            goldDiggerHighscoreTask = goldDiggerHighscoreGrain.GetScores(),
+            minesweeperHighscoreTask = minesweeperHighscoreGrain.GetScores()
         );
 
         var checkedHighscores = checkedHighscoresTask.Result;
         var uncheckedHighscores = uncheckedHighscoresTask.Result;
         var goldDiggerHighscores = goldDiggerHighscoreTask.Result;
+        var minesweeperHighscores = minesweeperHighscoreTask.Result;
 
-        var userIds = ((Dictionary<string, ulong>[]) [checkedHighscores, uncheckedHighscores, goldDiggerHighscores])
+        var userIds = ((Dictionary<string, ulong>[]) [checkedHighscores, uncheckedHighscores, goldDiggerHighscores, minesweeperHighscores])
             .SelectMany(d => d.Keys)
             .Distinct();
 
@@ -96,6 +100,11 @@ public class HighscoreAPI : ControllerBase
             {
                 Name = HighscoreLists.GoldDigger,
                 Scores = goldDiggerHighscores.Select(kv => new UserScore { Username = usernames.TryGetValue(kv.Key, out var username) ? username : "Anon", Score = kv.Value })
+            },
+            new Highscore
+            {
+                Name = HighscoreLists.Minesweeper,
+                Scores = minesweeperHighscores.Select(kv => new UserScore { Username = usernames.TryGetValue(kv.Key, out var username) ? username : "Anon", Score = kv.Value })
             }
         ];
     }
