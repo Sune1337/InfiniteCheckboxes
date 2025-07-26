@@ -80,7 +80,7 @@ public class CheckboxGrain : Grain, ICheckboxGrain
             {
                 // Invoke callback.
                 var checkboxCallbackGrain = GrainFactory.GetGrain<ICheckboxCallbackGrain>(_checkboxState.State.CallbackGrain.Value);
-                checkedFromCallback = await checkboxCallbackGrain.WhenCheckboxesUpdated(_grainId, _decompressedData, index, normalValue);
+                checkedFromCallback = await checkboxCallbackGrain.WhenCheckboxesUpdated(_grainId, _decompressedData, index, normalValue, userId);
                 if (checkedFromCallback != null)
                     foreach (var (i, v) in checkedFromCallback)
                     {

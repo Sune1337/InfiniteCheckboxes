@@ -130,7 +130,7 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
         return Task.CompletedTask;
     }
 
-    public async Task<Dictionary<int, bool>?> WhenCheckboxesUpdated(string id, bool[] checkboxes, int index, bool value)
+    public async Task<Dictionary<int, bool>?> WhenCheckboxesUpdated(string id, bool[] checkboxes, int index, bool value, string userId)
     {
         if (_minesweeperState.State.EndUtc != null)
         {
@@ -147,6 +147,11 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
         if (index < 0 || index >= gameSize)
         {
             throw new Exception("Stick to the game-area!");
+        }
+
+        if (userId != _minesweeperState.State.UserId)
+        {
+            throw new Exception("Not your game!");
         }
 
         // Register when war started.

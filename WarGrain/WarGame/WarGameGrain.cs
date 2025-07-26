@@ -67,7 +67,7 @@ public class WarGameGrain : Grain, IWarGameGrain, ICheckboxCallbackGrain
         return Task.CompletedTask;
     }
 
-    public async Task<Dictionary<int, bool>?> WhenCheckboxesUpdated(string id, bool[] checkboxes, int index, bool value)
+    public async Task<Dictionary<int, bool>?> WhenCheckboxesUpdated(string id, bool[] checkboxes, int index, bool value, string userId)
     {
         if (_warGameState.State.EndUtc != null)
         {
