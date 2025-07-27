@@ -176,16 +176,11 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
             // The user hit a mine on the first click. Move the mine to first free spot.
             MoveMineToFirstFree(uIndex);
             await _minesweeperState.WriteStateAsync();
-            var count = CountSurroundingMines(_minesweeperState.State.Mines, (uint)index, width);
-            if (count > 0)
-            {
-                await _redisMinesweeperUpdatePublisherManager.PublishCountsAsync(_grainId, new Dictionary<int, int> { { index, count } });
-            }
-
-            return null;
         }
 
-        // User sweeped something.
+        // Check the current location.
+        checkboxes[index] = true;
+
         if (_minesweeperState.State.Mines.ContainsKey(uIndex))
         {
             // User hit a mine!
@@ -195,9 +190,6 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
             await _redisMinesweeperUpdatePublisherManager.PublishMinesweeperAsync(_grainId, MinesweeperStateToMinesweeper());
             return null;
         }
-
-        // Check the current location.
-        checkboxes[index] = true;
 
         // Count surrounding mines.
         var mineCounts = new Dictionary<int, int>();
@@ -211,7 +203,7 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
         {
             // Autoplay.
             var sweeped = AutoPlay(checkboxes, _minesweeperState.State.Mines, uIndex, width);
-            result = sweeped.ToDictionary(x => (int)x, x => true);
+            result = sweeped.ToDictionary(x => (int)x, _ => true);
 
             // Add mine-counts.
             foreach (var u in sweeped)
