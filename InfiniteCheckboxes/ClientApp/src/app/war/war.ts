@@ -68,13 +68,13 @@ export class WarComponent implements OnInit, AfterViewInit, OnDestroy {
       .subscribe(() => {
         const id = this.activatedRoute?.snapshot.firstChild?.params['id'];
         if (id) {
-          this.goToId(parseInt(id));
+          this.updateSubscriptions(parseInt(id));
         }
       });
 
     const id = this.activatedRoute?.snapshot.firstChild?.params['id'];
     if (id) {
-      this.currentWarId = parseInt(id);
+      this.updateSubscriptions(parseInt(id));
     } else {
       // Load current war.
       const currentWarId = await this.warHubService.getCurrentWar();
@@ -85,26 +85,12 @@ export class WarComponent implements OnInit, AfterViewInit, OnDestroy {
   async ngAfterViewInit(): Promise<void> {
     // Set header template.
     this.headerService.setHeader(this.headerTemplate);
-
-    if (this.currentWarId >= 0) {
-      this.goToId(this.currentWarId);
-    }
-  }
-
-  private goToId = (id: number): void => {
-    this.currentWarId = id;
-    if (this.currentWarId >= 0) {
-      this.warHubService.subscribeToWar(id);
-    }
   }
 
   ngOnDestroy() {
     this.headerService.setHeader(null);
 
-    if (this.currentWarId >= 0) {
-      this.warHubService.unsubscribeToWar(this.currentWarId);
-    }
-
+    this.updateSubscriptions(-1);
     this.ngUnsubscribe.next();
     this.ngUnsubscribe.complete();
   }
@@ -152,5 +138,20 @@ export class WarComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.numberOfPlayers.set(stats.NumberOfSubscribers);
+  }
+
+  private updateSubscriptions = (warId: number): void => {
+    // Update minesweeper subscription.
+    const currentWarId = this.currentWarId;
+    if (currentWarId >= 0 && currentWarId !== warId) {
+      this.warHubService.unsubscribeToWar(currentWarId);
+      this.currentWarId = -1;
+      this.war.set(null);
+    }
+
+    if (warId >= 0 && currentWarId !== warId) {
+      this.currentWarId = warId;
+      this.warHubService.subscribeToWar(warId);
+    }
   }
 }
