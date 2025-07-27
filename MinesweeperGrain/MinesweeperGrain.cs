@@ -62,7 +62,8 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
         }
 
         var gameSize = width * width;
-        if (numberOfMines < width || numberOfMines > gameSize * 0.25)
+        var minMines = width * width * 0.125;
+        if (numberOfMines < minMines || numberOfMines > gameSize * 0.2)
         {
             throw new ArgumentOutOfRangeException(nameof(numberOfMines));
         }
@@ -194,7 +195,7 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
             await _redisMinesweeperUpdatePublisherManager.PublishMinesweeperAsync(_grainId, MinesweeperStateToMinesweeper());
             return null;
         }
-        
+
         // Check the current location.
         checkboxes[index] = true;
 
@@ -245,24 +246,13 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
             _minesweeperState.State.EndUtc = DateTime.UtcNow;
             var playTime = (_minesweeperState.State.EndUtc.Value - _minesweeperState.State.StartUtc.Value).TotalSeconds;
 
-            // First calculate the density score multiplier
-            var minDensity = width / (double)(width * width);
-            var maxDensity = 0.25;
-            var actualDensity = _minesweeperState.State.Mines.Count / (double)(width * width);
+            // Calculate score
+            var mineDensity = _minesweeperState.State.Mines.Count / (double)gameSize;
+            var sizeRatio = width / 8.0;
+            var smallBoardPunishment = Math.Log(gameSize - 62, 4096);
+            _minesweeperState.State.Score = (ulong)Math.Round(mineDensity * sizeRatio / playTime * smallBoardPunishment * 100000);
 
-            // Scale from 1 to 10 based on where the density falls between min and max
-            var densityMultiplier = 1 + (9 * (actualDensity - minDensity) / (maxDensity - minDensity));
-
-            // Base score uses mines and time
-            var baseScore = (_minesweeperState.State.Mines.Count * densityMultiplier) / playTime;
-
-            // Linear scaling with board size (using 8x8 as baseline)
-            var sizeMultiplier = (double)width / 8;
-
-            // Final score
-            _minesweeperState.State.Score = (ulong)Math.Round(baseScore * sizeMultiplier * 10);
-
-
+            // Save state and publish.
             await _minesweeperState.WriteStateAsync();
             await _redisMinesweeperUpdatePublisherManager.PublishMinesweeperAsync(_grainId, MinesweeperStateToMinesweeper());
 

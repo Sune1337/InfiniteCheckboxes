@@ -114,13 +114,9 @@ export class MinesweeperComponent implements OnInit, AfterViewInit, OnDestroy {
 
     effect(() => {
       // When game-size changes, select a default number of mines.
-      const selectedNumberOfMines = parseInt(this.selectedNumberOfMines());
       const selectedWidth = parseInt(this.selectedWidth());
-      if (selectedNumberOfMines < selectedWidth) {
-        this.selectedNumberOfMines.set(selectedWidth);
-      } else if (selectedNumberOfMines > selectedWidth * selectedWidth / 2) {
-        this.selectedNumberOfMines.set(selectedWidth);
-      }
+      const start = (selectedWidth * selectedWidth) * 0.125;
+      this.selectedNumberOfMines.set(start);
     });
   }
 
@@ -222,9 +218,12 @@ export class MinesweeperComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private createNumberOfMinesOptions(width: number): number[] {
-    const end = (width * width) * 0.25;
+    const gameSize = (width * width);
+    const start = gameSize * 0.125;
+    const end = gameSize * 0.2;
+    const step = Math.max(1, Math.round((end - start) / 10));
     const result: number[] = [];
-    for (let i = width; i <= end; i++) {
+    for (let i = start; i <= end; i += step) {
       result.push(i);
     }
     return result;
