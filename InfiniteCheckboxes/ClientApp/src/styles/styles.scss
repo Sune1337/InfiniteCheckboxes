@@ -35,3 +35,8 @@ a {
   color: rgb(158, 158, 255);
   text-decoration: none;
 }
+
+/* Make cdk overlay pane work with user-menu popup */
+.cdk-overlay-pane {
+  width: min(500px, 100%);
+}
