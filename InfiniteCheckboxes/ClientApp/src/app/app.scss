@@ -14,4 +14,11 @@
 
 .child-header {
   flex-grow: 1;
+
+  /*
+  When long-pressing a checkbox IOS starts selecting text in the header.
+  By preventing selecting text this sorta fixes that issue.
+   */
+  -ms-user-select: none;
+  user-select: none;
 }

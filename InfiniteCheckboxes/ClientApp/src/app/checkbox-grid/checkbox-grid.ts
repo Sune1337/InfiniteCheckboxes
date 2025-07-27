@@ -4,6 +4,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { CheckboxesHubService, CheckboxPages, GoldSpots } from '../../api/checkboxes-hub.service';
 import { LimitPipe } from '../../utils/limit-pipe';
 import { getErrorMessage } from '../../utils/get-error-message';
+import { ContextMenuDirective } from '../../utils/context-menu.directive';
 
 interface CheckboxPage {
   pageId: bigint;
@@ -18,7 +19,8 @@ interface CheckboxPage {
     CdkFixedSizeVirtualScroll,
     CdkVirtualForOf,
     CdkVirtualScrollViewport,
-    LimitPipe
+    LimitPipe,
+    ContextMenuDirective
   ],
   templateUrl: './checkbox-grid.html',
   styleUrl: './checkbox-grid.scss',

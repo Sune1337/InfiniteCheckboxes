@@ -1,12 +1,12 @@
 @if (checkBoxPages()) {
   <cdk-virtual-scroll-viewport [itemSize]="maxSize() ? 0 : itemSize()" class="scroll-container" (scrolledIndexChange)="onScroll()">
-    <div *cdkVirtualFor="let item of checkBoxPages(); let pageIndex = index; trackBy: trackCheckboxPage"
+    <div *cdkVirtualFor="let item of checkBoxPages(); trackBy: trackCheckboxPage"
          class="scroll-item width-{{ maxSize() ? 0 : gridWidth() }}"
     >
       <div class="checkbox-grid"
            [style.grid-template-columns]="gridColumns()"
            (change)="whenCheckboxChanged($event)"
-           (contextmenu)="whenContextMenu($event)"
+           (appContextMenu)="whenContextMenu($event)"
            [attr.page-id]="item.pageId"
       >
         @for (isChecked of item.state() | limit: maxSize(); track $index) {
