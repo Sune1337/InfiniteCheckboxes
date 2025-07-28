@@ -1,0 +1,12 @@
+{{- if .Values.images.webapp.compressStatic}}
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: compress-static
+  namespace: {{ .Release.Namespace }}
+spec:
+  compress:
+    includedContentTypes:
+      - "text/css"
+      - "text/javascript"
+{{- end }}
