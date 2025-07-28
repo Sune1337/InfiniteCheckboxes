@@ -25,6 +25,8 @@ spec:
           image: "{{ .Values.images.webapp.repository }}:{{ .Values.images.webapp.tag }}"
           imagePullPolicy: {{ .Values.images.webapp.pullPolicy }}
           env:
+            - name: ASPNETCORE_FORWARDEDHEADERS_ENABLED
+              value: "true"
             - name: ConnectionStrings__PubSubRedis
               value: "pubsub-redis:6379"
             - name: ConnectionStrings__ClusterMongoDb

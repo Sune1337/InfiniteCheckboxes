@@ -66,7 +66,11 @@ builder.Services.AddDefaultExceptionHandler();
 builder.Services.AddCheckboxServices();
 builder.Services.AddWarObserverService();
 builder.Services.AddMinesweeperObserverService();
-builder.Services.AddHsts(options => { options.MaxAge = TimeSpan.FromDays(365); });
+builder.Services.AddHsts(options =>
+{
+    options.MaxAge = TimeSpan.FromDays(365);
+    options.IncludeSubDomains = true;
+});
 builder.Services.AddLazyCache();
 
 var app = builder.Build();
