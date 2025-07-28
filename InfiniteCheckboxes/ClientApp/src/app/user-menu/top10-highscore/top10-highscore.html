@@ -1,106 +1,31 @@
 <app-tabs>
-  <app-tab title="Checkers">
-    <div class="top10-container">
-      @if (checkersHighscore(); as highscore) {
-        <table class="highscore-table">
-          <colgroup>
-            <col style="width: auto">
-            <col style="width: 5rem">
-          </colgroup>
-          @for (score of highscore.scores | limit: 10; track score) {
-            <tr>
-              <td>{{ score.username }}</td>
-              <td>{{ score.score }}</td>
-            </tr>
-          }
-        </table>
-      } @else {
-        Loading highscores...
-      }
-    </div>
+  <app-tab #tab1 title="Checkers">
+    @if (tab1.active()) {
+      <app-highscore-list name="Checked"></app-highscore-list>
+    }
   </app-tab>
 
-  <app-tab title="Uncheckers">
-    <div class="top10-container">
-      @if (uncheckersHighscore(); as highscore) {
-        <table class="highscore-table">
-          <colgroup>
-            <col style="width: auto">
-            <col style="width: 5rem">
-          </colgroup>
-          @for (score of highscore.scores | limit: 10; track score) {
-            <tr>
-              <td>{{ score.username }}</td>
-              <td>{{ score.score }}</td>
-            </tr>
-          }
-        </table>
-      } @else {
-        Loading highscores...
-      }
-    </div>
+  <app-tab #tab2 title="Uncheckers">
+    @if (tab2.active()) {
+      <app-highscore-list name="Unchecked"></app-highscore-list>
+    }
   </app-tab>
 
-  <app-tab title="Gold diggers">
-    <div class="top10-container">
-      @if (goldDiggersHighscore(); as highscore) {
-        <table class="highscore-table">
-          <colgroup>
-            <col style="width: auto">
-            <col style="width: 5rem">
-          </colgroup>
-          @for (score of highscore.scores | limit: 10; track score) {
-            <tr>
-              <td>{{ score.username }}</td>
-              <td>{{ score.score }}</td>
-            </tr>
-          }
-        </table>
-      } @else {
-        Loading highscores...
-      }
-    </div>
+  <app-tab #tab3 title="Gold diggers">
+    @if (tab3.active()) {
+      <app-highscore-list name="GoldDigger"></app-highscore-list>
+    }
   </app-tab>
 
-  <app-tab title="Minesweeper">
-    <div class="top10-container">
-      @if (minesweeperHighscore(); as highscore) {
-        <table class="highscore-table">
-          <colgroup>
-            <col style="width: auto">
-            <col style="width: 5rem">
-          </colgroup>
-          @for (score of highscore.scores | limit: 10; track score) {
-            <tr>
-              <td>{{ score.username }}</td>
-              <td>{{ score.score }}</td>
-            </tr>
-          }
-        </table>
-      } @else {
-        Loading highscores...
-      }
-    </div>
+  <app-tab #tab4 title="Minesweeper">
+    @if (tab4.active()) {
+      <app-highscore-list name="Minesweeper"></app-highscore-list>
+    }
   </app-tab>
 
-  <app-tab title="Lucky start">
-    <div class="top10-container">
-      @if (luckyStartHighscore(); as highscore) {
-        <table class="highscore-table">
-          <colgroup>
-            <col style="width: auto">
-            <col style="width: 5rem">
-          </colgroup>
-          @for (score of highscore.scores | limit: 10; track score) {
-            <tr>
-              <td>{{ score.username }}</td>
-              <td>{{ score.score }}</td>
-            </tr>
-          }
-        </table>
-      } @else {
-        Loading highscores...
-      }
-    </div>
+  <app-tab #tab5 title="Lucky start">
+    @if (tab5.active()) {
+      <app-highscore-list name="MinesweeperLuckyStart"></app-highscore-list>
+    }
   </app-tab>
 </app-tabs>

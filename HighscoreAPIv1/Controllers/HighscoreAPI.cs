@@ -37,44 +37,22 @@ public class HighscoreAPI : ControllerBase
     #region Public Methods and Operators
 
     [HttpGet]
-    public async Task<IEnumerable<Highscore>> GetHighscores()
+    public async Task<Highscore> GetHighscores(string name)
     {
-        return await _cache.GetOrAddAsync("Highscores", LoadHighscoreData, DateTime.UtcNow.AddSeconds(10));
+        return await _cache.GetOrAddAsync($"Highscores_{name}", () => LoadHighscoreData(name), DateTime.UtcNow.AddSeconds(10));
     }
 
     #endregion
 
     #region Methods
 
-    private async Task<IEnumerable<Highscore>> LoadHighscoreData()
+    private async Task<Highscore> LoadHighscoreData(string name)
     {
-        var checkedHighscoreGrain = _grainFactory.GetGrain<IHighscoreGrain>(HighscoreLists.Checked);
-        var uncheckedHighscoreGrain = _grainFactory.GetGrain<IHighscoreGrain>(HighscoreLists.Unchecked);
-        var goldDiggerHighscoreGrain = _grainFactory.GetGrain<IHighscoreGrain>(HighscoreLists.GoldDigger);
-        var minesweeperHighscoreGrain = _grainFactory.GetGrain<IHighscoreGrain>(HighscoreLists.Minesweeper);
-        var minesweeperLuckyStartHighscoreGrain = _grainFactory.GetGrain<IHighscoreGrain>(HighscoreLists.MinesweeperLuckyStart);
+        var highscoreGrain = _grainFactory.GetGrain<IHighscoreGrain>(name);
+        var highscores = await highscoreGrain.GetScores();
 
-        Task<Dictionary<string, ulong>> checkedHighscoresTask;
-        Task<Dictionary<string, ulong>> uncheckedHighscoresTask;
-        Task<Dictionary<string, ulong>> goldDiggerHighscoreTask;
-        Task<Dictionary<string, ulong>> minesweeperHighscoreTask;
-        Task<Dictionary<string, ulong>> minesweeperLuckyStartHighscoreTask;
-        await Task.WhenAll(
-            checkedHighscoresTask = checkedHighscoreGrain.GetScores(),
-            uncheckedHighscoresTask = uncheckedHighscoreGrain.GetScores(),
-            goldDiggerHighscoreTask = goldDiggerHighscoreGrain.GetScores(),
-            minesweeperHighscoreTask = minesweeperHighscoreGrain.GetScores(),
-            minesweeperLuckyStartHighscoreTask = minesweeperLuckyStartHighscoreGrain.GetScores()
-        );
-
-        var checkedHighscores = checkedHighscoresTask.Result;
-        var uncheckedHighscores = uncheckedHighscoresTask.Result;
-        var goldDiggerHighscores = goldDiggerHighscoreTask.Result;
-        var minesweeperHighscores = minesweeperHighscoreTask.Result;
-        var minesweeperLuckyStartHighscores = minesweeperLuckyStartHighscoreTask.Result;
-
-        var userIds = ((Dictionary<string, ulong>[]) [checkedHighscores, uncheckedHighscores, goldDiggerHighscores, minesweeperHighscores, minesweeperLuckyStartHighscores])
-            .SelectMany(d => d.Keys)
+        var userIds = highscores
+            .Select(d => d.Key)
             .Distinct();
 
         var usernames = new ConcurrentDictionary<string, string>();
@@ -88,34 +66,11 @@ public class HighscoreAPI : ControllerBase
             }
         });
 
-        return
-        [
-            new Highscore
-            {
-                Name = HighscoreLists.Checked,
-                Scores = checkedHighscores.Select(kv => new UserScore { Username = usernames.TryGetValue(kv.Key, out var username) ? username : "Anon", Score = kv.Value })
-            },
-            new Highscore
-            {
-                Name = HighscoreLists.Unchecked,
-                Scores = uncheckedHighscores.Select(kv => new UserScore { Username = usernames.TryGetValue(kv.Key, out var username) ? username : "Anon", Score = kv.Value })
-            },
-            new Highscore
-            {
-                Name = HighscoreLists.GoldDigger,
-                Scores = goldDiggerHighscores.Select(kv => new UserScore { Username = usernames.TryGetValue(kv.Key, out var username) ? username : "Anon", Score = kv.Value })
-            },
-            new Highscore
-            {
-                Name = HighscoreLists.Minesweeper,
-                Scores = minesweeperHighscores.Select(kv => new UserScore { Username = usernames.TryGetValue(kv.Key, out var username) ? username : "Anon", Score = kv.Value })
-            },
-            new Highscore
-            {
-                Name = HighscoreLists.MinesweeperLuckyStart,
-                Scores = minesweeperLuckyStartHighscores.Select(kv => new UserScore { Username = usernames.TryGetValue(kv.Key, out var username) ? username : "Anon", Score = kv.Value })
-            }
-        ];
+        return new Highscore
+        {
+            Name = name,
+            Scores = highscores.Select(kv => new UserScore { Username = usernames.TryGetValue(kv.Key, out var username) ? username : "Anon", Score = kv.Value })
+        };
     }
 
     #endregion

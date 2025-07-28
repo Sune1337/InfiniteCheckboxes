@@ -10,7 +10,7 @@ export class HighscoreApiService {
 
   private httpClient = inject(HttpClient);
 
-  public getHighscores = (): Observable<Highscore[]> => {
-    return this.httpClient.get<Highscore[]>('/api/v1/HighscoreAPI/GetHighscores');
+  public getHighscores = (name: string): Observable<Highscore> => {
+    return this.httpClient.get<Highscore>(`/api/v1/HighscoreAPI/GetHighscores?name=${name}`);
   }
 }

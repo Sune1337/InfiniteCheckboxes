@@ -1,0 +1,22 @@
+.highscore-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+
+  td {
+    padding: 0.5rem;
+    border-bottom: 1px solid #7e7e7e;
+
+    &:first-child {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &:last-child {
+      white-space: nowrap;
+      text-align: right;
+      padding-left: 1rem;
+    }
+  }
+}
