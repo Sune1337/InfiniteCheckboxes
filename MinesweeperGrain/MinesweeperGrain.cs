@@ -25,6 +25,7 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
     private readonly IRedisMinesweeperUpdatePublisherManager _redisMinesweeperUpdatePublisherManager;
     private readonly SecretPcg32Factory _secretPcg32Factory;
 
+    private bool[]? _flags;
     private string _grainId = null!;
     private Pcg32? _minesweeperRng;
 
@@ -168,6 +169,8 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
         if (id == _minesweeperState.State.FlagLocationId)
         {
             // User flagged something.
+            checkboxes[index] = value;
+            _flags = checkboxes;
             return null;
         }
 
@@ -210,7 +213,7 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
         else
         {
             // Autoplay.
-            var sweeped = AutoPlay(checkboxes, _minesweeperState.State.Mines, uIndex, width);
+            var sweeped = AutoPlay(checkboxes, _flags, _minesweeperState.State.Mines, uIndex, width);
             result = sweeped.ToDictionary(x => (int)x, _ => true);
 
             // Add mine-counts.
@@ -286,7 +289,7 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
 
     #region Methods
 
-    private List<uint> AutoPlay(bool[]? checkboxes, Dictionary<uint, bool> mines, uint index, uint stride, List<uint>? autoChecked = null, HashSet<uint>? sweeped = null, Queue<uint>? cellsToProcess = null)
+    private List<uint> AutoPlay(bool[]? checkboxes, bool[]? flags, Dictionary<uint, bool> mines, uint index, uint stride, List<uint>? autoChecked = null, HashSet<uint>? sweeped = null, Queue<uint>? cellsToProcess = null)
     {
         autoChecked ??= new List<uint>();
         sweeped ??= new HashSet<uint>();
@@ -305,7 +308,7 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
 
             foreach (var neighborIndex in IterateSurroundingIndexes(currentIndex, stride))
             {
-                if (neighborIndex >= gameSize || !sweeped.Add(neighborIndex))
+                if ((flags != null && flags[neighborIndex]) || neighborIndex >= gameSize || !sweeped.Add(neighborIndex))
                 {
                     continue;
                 }
@@ -330,7 +333,7 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
             var ac = autoChecked[i];
             foreach (var neighborIndex in IterateSurroundingIndexes(ac, stride))
             {
-                if ((checkboxes == null || !checkboxes[neighborIndex]) && !autoChecked.Contains(neighborIndex))
+                if ((flags == null || !flags[neighborIndex]) && (checkboxes == null || !checkboxes[neighborIndex]) && !autoChecked.Contains(neighborIndex))
                 {
                     if (checkboxes != null)
                     {
@@ -447,7 +450,7 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
                 continue;
             }
 
-            var filledIndexes = AutoPlay(null, _minesweeperState.State.Mines, index, width, autoChecked, sweeped, cellsToProcess);
+            var filledIndexes = AutoPlay(null, null, _minesweeperState.State.Mines, index, width, autoChecked: autoChecked, sweeped: sweeped, cellsToProcess: cellsToProcess);
             for (var i = 0; i < filledIndexes.Count; i++)
             {
                 var filledIndex = filledIndexes[i];
