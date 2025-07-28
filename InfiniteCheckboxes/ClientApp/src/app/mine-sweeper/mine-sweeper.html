@@ -69,6 +69,7 @@
           [locationId]="`0x${minesweeper.SweepLocationId}`"
           (contextClick)="whenRightMouseButtonClick($event)"
           [checkboxStyles]="(checkboxStyles | async) || []"
+          [allowCheckUncheck]="allowCheckUncheck"
         >
         </app-checkbox-grid>
       }

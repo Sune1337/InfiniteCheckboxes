@@ -34,6 +34,7 @@ export class CheckboxGrid implements OnDestroy {
   public locationId = input<string | null>(null);
   public contextClick = output<number>();
   public checkboxStyles = input<(string | null)[]>([]);
+  public allowCheckUncheck = input<(index: number, isChecked: boolean) => boolean>();
 
   // Generate grid-template-columns value.
   protected gridColumns = computed(() => `repeat(${this.gridWidth()}, 24px)`);
@@ -164,6 +165,12 @@ export class CheckboxGrid implements OnDestroy {
 
     const index = parseInt(checkbox.getAttribute('data-index') ?? '', 10);
     if (isNaN(index)) {
+      return;
+    }
+
+    const allowCheckUncheck = this.allowCheckUncheck();
+    if (allowCheckUncheck && !allowCheckUncheck(index, isChecked)) {
+      checkboxElement.checked = !isChecked;
       return;
     }
 
