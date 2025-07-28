@@ -81,7 +81,25 @@ if (!app.Environment.IsDevelopment())
 app.UseExceptionHandler();
 
 // Asp.Net requirements.
-app.UseStaticFiles();
+if (app.Environment.IsDevelopment())
+{
+    app.UseStaticFiles();
+}
+else
+{
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        OnPrepareResponse = context =>
+        {
+            string path = context.Context.Request.Path;
+            if (path.EndsWith(".css") || path.EndsWith(".js"))
+            {
+                context.Context.Response.Headers.Append("Cache-Control", $"public, max-age={31536000}");
+            }
+        }
+    });
+}
+
 app.UseRouting();
 
 if (app.Configuration.GetValue<bool>("UseSerilogRequestLogging"))
