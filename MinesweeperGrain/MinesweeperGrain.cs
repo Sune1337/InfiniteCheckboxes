@@ -54,7 +54,7 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
 
     #region Public Methods and Operators
 
-    public async Task CreateGame(uint width, uint numberOfMines, string userId)
+    public async Task CreateGame(uint width, uint numberOfMines, string userId, bool luckyStart)
     {
         if (width < 8 || width > 64)
         {
@@ -83,7 +83,14 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
         var flagGrain = GrainFactory.GetGrain<ICheckboxGrain>(_minesweeperState.State.FlagLocationId);
         await flagGrain.RegisterCallback<MinesweeperGrain>(this.GetGrainId());
 
-        await _minesweeperState.WriteStateAsync();
+        if (luckyStart)
+        {
+            await LuckyStart(_minesweeperState.State.SweepLocationId, width, userId);
+        }
+        else
+        {
+            await _minesweeperState.WriteStateAsync();
+        }
     }
 
     public async Task<Minesweeper> GetMinesweeper()
@@ -171,7 +178,8 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
         }
 
         var uIndex = (uint)index;
-        if (IsFirstSweep(checkboxes) && _minesweeperState.State.Mines.ContainsKey(uIndex))
+        var isFirstSweep = IsFirstSweep(checkboxes);
+        if (isFirstSweep && _minesweeperState.State.Mines.ContainsKey(uIndex))
         {
             // The user hit a mine on the first click. Move the mine to first free spot.
             MoveMineToFirstFree(uIndex);
@@ -236,24 +244,33 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
         {
             // User finished!
             _minesweeperState.State.EndUtc = DateTime.UtcNow;
-            var playTime = (_minesweeperState.State.EndUtc.Value - _minesweeperState.State.StartUtc.Value).TotalSeconds;
 
             // Calculate score
             var mineDensity = _minesweeperState.State.Mines.Count / (double)gameSize;
             var sizeRatio = width / 8.0;
+            var playTime = (_minesweeperState.State.EndUtc.Value - _minesweeperState.State.StartUtc.Value).TotalSeconds;
             var smallBoardPunishment = Math.Log(gameSize - 62, 4096);
             _minesweeperState.State.Score = (ulong)Math.Round(mineDensity * sizeRatio / playTime * smallBoardPunishment * 100000);
+
+            if (!isFirstSweep && _minesweeperState.State.UserId != null)
+            {
+                if (_minesweeperState.State.IsLuckyStart)
+                {
+                    // Update high score.
+                    var minesweeperHighscoreGrain = GrainFactory.GetGrain<IHighscoreCollectorGrain>(HighscoreLists.MinesweeperLuckyStart);
+                    await minesweeperHighscoreGrain.UpdateScore(_minesweeperState.State.UserId, _minesweeperState.State.Score.Value);
+                }
+                else
+                {
+                    // Update high score.
+                    var minesweeperHighscoreGrain = GrainFactory.GetGrain<IHighscoreCollectorGrain>(HighscoreLists.Minesweeper);
+                    await minesweeperHighscoreGrain.UpdateScore(_minesweeperState.State.UserId, _minesweeperState.State.Score.Value);
+                }
+            }
 
             // Save state and publish.
             await _minesweeperState.WriteStateAsync();
             await _redisMinesweeperUpdatePublisherManager.PublishMinesweeperAsync(_grainId, MinesweeperStateToMinesweeper());
-
-            if (_minesweeperState.State.UserId != null)
-            {
-                // Update high score.
-                var minesweeperHighscoreGrain = GrainFactory.GetGrain<IHighscoreCollectorGrain>(HighscoreLists.Minesweeper);
-                await minesweeperHighscoreGrain.UpdateScore(_minesweeperState.State.UserId, _minesweeperState.State.Score.Value);
-            }
         }
 
         return result;
@@ -263,15 +280,17 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
 
     #region Methods
 
-    private List<uint> AutoPlay(bool[] checkboxes, Dictionary<uint, bool> mines, uint index, uint stride)
+    private List<uint> AutoPlay(bool[]? checkboxes, Dictionary<uint, bool> mines, uint index, uint stride, List<uint>? autoChecked = null, HashSet<uint>? sweeped = null, Queue<uint>? cellsToProcess = null)
     {
-        var autoChecked = new List<uint>();
-        var sweeped = new HashSet<uint>();
-        var cellsToProcess = new Queue<uint>();
+        autoChecked ??= new List<uint>();
+        sweeped ??= new HashSet<uint>();
+        cellsToProcess ??= new Queue<uint>();
+        var gameSize = stride * stride;
 
         // Add initial cell
-        cellsToProcess.Enqueue(index);
+        autoChecked.Add(index);
         sweeped.Add(index);
+        cellsToProcess.Enqueue(index);
 
         // Process cells with 0 surrounding mines
         while (cellsToProcess.Count > 0)
@@ -280,14 +299,18 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
 
             foreach (var neighborIndex in IterateSurroundingIndexes(currentIndex, stride))
             {
-                if (neighborIndex >= checkboxes.Length || !sweeped.Add(neighborIndex))
+                if (neighborIndex >= gameSize || !sweeped.Add(neighborIndex))
                 {
                     continue;
                 }
 
-                if (!checkboxes[neighborIndex] && CountSurroundingMines(mines, neighborIndex, stride) == 0)
+                if ((checkboxes == null || !checkboxes[neighborIndex]) && CountSurroundingMines(mines, neighborIndex, stride) == 0)
                 {
-                    checkboxes[(int)neighborIndex] = true;
+                    if (checkboxes != null)
+                    {
+                        checkboxes[(int)neighborIndex] = true;
+                    }
+
                     autoChecked.Add(neighborIndex);
                     cellsToProcess.Enqueue(neighborIndex);
                 }
@@ -301,9 +324,13 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
             var ac = autoChecked[i];
             foreach (var neighborIndex in IterateSurroundingIndexes(ac, stride))
             {
-                if (!checkboxes[neighborIndex] && !autoChecked.Contains(neighborIndex))
+                if ((checkboxes == null || !checkboxes[neighborIndex]) && !autoChecked.Contains(neighborIndex))
                 {
-                    checkboxes[(int)neighborIndex] = true;
+                    if (checkboxes != null)
+                    {
+                        checkboxes[(int)neighborIndex] = true;
+                    }
+
                     autoChecked.Add(neighborIndex);
                 }
             }
@@ -385,6 +412,56 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
                 yield return (uint)neighborIndex;
             }
         }
+    }
+
+    private async Task LuckyStart(string sweepLocationId, uint width, string userId)
+    {
+        _minesweeperState.State.IsLuckyStart = true;
+
+        // Find the biggest area to flood-fill.
+        var testedIndexes = new HashSet<uint>();
+        var gameSize = width * width;
+        var largestArea = 0;
+        var largestAreaIndex = 0;
+
+        var autoChecked = new List<uint>();
+        var sweeped = new HashSet<uint>();
+        var cellsToProcess = new Queue<uint>();
+
+        for (var index = 0u; index < gameSize; index++)
+        {
+            if (testedIndexes.Add(index) == false)
+            {
+                continue;
+            }
+
+            var surroundingMines = CountSurroundingMines(_minesweeperState.State.Mines, index, width);
+            if (surroundingMines > 0)
+            {
+                continue;
+            }
+
+            var filledIndexes = AutoPlay(null, _minesweeperState.State.Mines, index, width, autoChecked, sweeped, cellsToProcess);
+            for (var i = 0; i < filledIndexes.Count; i++)
+            {
+                var filledIndex = filledIndexes[i];
+                testedIndexes.Add(filledIndex);
+            }
+
+            if (filledIndexes.Count > largestArea)
+            {
+                largestArea = filledIndexes.Count;
+                largestAreaIndex = (int)index;
+            }
+
+            autoChecked.Clear();
+            sweeped.Clear();
+            cellsToProcess.Clear();
+        }
+
+        using var scope = RequestContext.AllowCallChainReentrancy();
+        var checkboxGrain = GrainFactory.GetGrain<ICheckboxGrain>(sweepLocationId);
+        await checkboxGrain.SetCheckbox(largestAreaIndex, 1, userId);
     }
 
 

@@ -7,6 +7,7 @@ public class MinesweeperState
     public DateTime? CreatedUtc { get; set; }
     public DateTime? EndUtc { get; set; }
     public string? FlagLocationId { get; set; }
+    public bool IsLuckyStart { get; set; }
     public Dictionary<uint, bool> Mines { get; set; } = new();
     public ulong? Score { get; set; }
     public DateTime? StartUtc { get; set; }

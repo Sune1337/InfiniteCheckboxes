@@ -157,9 +157,9 @@ export class MinesweeperComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  protected whenStartClick = async (): Promise<void> => {
+  protected whenStartClick = async (luckyStart: boolean): Promise<void> => {
     try {
-      const minesweeperId = await this.minesweeperHubService.createGame(parseInt(this.selectedWidth()), parseInt(this.selectedNumberOfMines()));
+      const minesweeperId = await this.minesweeperHubService.createGame(parseInt(this.selectedWidth()), parseInt(this.selectedNumberOfMines()), luckyStart);
       this.router.navigate(['Minesweeper', minesweeperId]);
     } catch (error: any) {
       alert(getErrorMessage(error));

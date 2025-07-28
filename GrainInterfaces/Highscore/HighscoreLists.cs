@@ -7,6 +7,7 @@ public class HighscoreLists
     public const string Checked = "Checked";
     public const string GoldDigger = "GoldDigger";
     public const string Minesweeper = "Minesweeper";
+    public const string MinesweeperLuckyStart = "MinesweeperLuckyStart";
     public const string Unchecked = "Unchecked";
 
     #endregion

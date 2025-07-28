@@ -37,13 +37,13 @@ export class MinesweeperHubService {
     this.minesweeperCounts = createTrackedSubject(() => new Subject<MinesweeperCounts>(), this.whenSubscribed, this.whenUnsubscribed);
   }
 
-  public createGame = async (width: number, numberOfMines: number): Promise<string> => {
+  public createGame = async (width: number, numberOfMines: number, luckyStart: boolean): Promise<string> => {
     return new Promise<string>(async (resolve, reject) => {
       this.hubConnectionObservable
         .pipe(first())
         .subscribe(async hubConnection => {
           try {
-            const minesweeperId = await hubConnection.invoke<string>('CreateGame', width, numberOfMines);
+            const minesweeperId = await hubConnection.invoke<string>('CreateGame', width, numberOfMines, luckyStart);
             if (!minesweeperId) {
               reject(new Error('Could not create game.'));
             }

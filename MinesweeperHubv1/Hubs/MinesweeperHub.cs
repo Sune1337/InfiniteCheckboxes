@@ -38,15 +38,14 @@ public class MinesweeperHub : Hub
 
     #region Public Methods and Operators
 
-    public async Task<string> CreateGame(uint width, uint numberOfMines)
+    public async Task<string> CreateGame(uint width, uint numberOfMines, bool luckyStart)
     {
         var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new InvalidOperationException("User not logged in.");
         var minesweeperId = Random256Bit.GenerateHex();
         var minesweeperGrain = _grainFactory.GetGrain<IMinesweeperGrain>(minesweeperId);
-        await minesweeperGrain.CreateGame(width, numberOfMines, userId);
+        await minesweeperGrain.CreateGame(width, numberOfMines, userId, luckyStart);
         return minesweeperId;
     }
-
 
     public async Task<Minesweeper> MinesweeperSubscribe(byte[] byteId)
     {
