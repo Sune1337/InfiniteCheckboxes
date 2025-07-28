@@ -176,6 +176,10 @@ export class MinesweeperComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   protected whenRightMouseButtonClick = async (index: number): Promise<void> => {
+    if (this.sweeped?.[index]) {
+      return;
+    }
+
     const flags = this.flagPage();
     if (!flags) {
       return;
