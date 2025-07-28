@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { Tab } from './tabs/tab/tab';
 import { Tabs } from './tabs/tabs';
 import { HighscoreList } from './highscore-list/highscore-list';
@@ -8,7 +9,8 @@ import { HighscoreList } from './highscore-list/highscore-list';
   imports: [
     Tab,
     Tabs,
-    HighscoreList
+    HighscoreList,
+    DatePipe
   ],
   templateUrl: './top10-highscore.html',
   styleUrl: './top10-highscore.scss',

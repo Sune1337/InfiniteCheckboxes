@@ -1,19 +1,23 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, OnDestroy, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ContentChild, effect, inject, input, OnDestroy, signal, TemplateRef } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { concatMap, map, Subject, takeUntil, timer } from 'rxjs';
 import { LimitPipe } from "../../../../utils/limit-pipe";
 import { Highscore } from '../../../../api/models/highscore';
-import { concatMap, map, Subject, takeUntil, timer } from 'rxjs';
 import { HighscoreApiService } from '../../../../api/highscore-api.service';
 
 @Component({
   selector: 'app-highscore-list',
   imports: [
-    LimitPipe
+    LimitPipe,
+    NgTemplateOutlet
   ],
   templateUrl: './highscore-list.html',
   styleUrl: './highscore-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class HighscoreList implements OnDestroy {
+
+  @ContentChild('scoreTemplate') scoreTemplate?: TemplateRef<any>;
 
   public name = input<string>();
 

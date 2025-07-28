@@ -2,13 +2,18 @@
   <table class="highscore-table">
     <colgroup>
       <col style="width: auto">
-      <col style="width: 5rem">
+      <col style="width: 7rem">
     </colgroup>
     @if (highscore(); as highscore) {
       @for (score of highscore.scores | limit: 10; track score) {
         <tr>
           <td>{{ score.username }}</td>
-          <td>{{ score.score }}</td>
+          <td>
+            <ng-container *ngTemplateOutlet="scoreTemplate || defaultTemplate; context: { $implicit: score }"></ng-container>
+            <ng-template #defaultTemplate>
+              {{ score.score }}
+            </ng-template>
+          </td>
         </tr>
       }
     } @else {

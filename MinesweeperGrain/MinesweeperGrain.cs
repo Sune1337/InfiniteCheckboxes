@@ -252,9 +252,15 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
             var smallBoardPunishment = Math.Log(gameSize - 62, 4096);
             _minesweeperState.State.Score = (ulong)Math.Round(mineDensity * sizeRatio / playTime * smallBoardPunishment * 100000);
 
-            if (!isFirstSweep && _minesweeperState.State.UserId != null)
+            if (!(isFirstSweep && _minesweeperState.State.IsLuckyStart) && _minesweeperState.State.UserId != null)
             {
-                if (_minesweeperState.State.IsLuckyStart)
+                if (isFirstSweep)
+                {
+                    // Only record to high-score list if this was not a lucky start.
+                    var minesweeperHighscoreGrain = GrainFactory.GetGrain<IHighscoreCollectorGrain>(HighscoreLists.MinesweeperOneClickSweep);
+                    await minesweeperHighscoreGrain.UpdateScore(_minesweeperState.State.UserId, (ulong)DateTime.UtcNow.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
+                }
+                else if (_minesweeperState.State.IsLuckyStart)
                 {
                     // Update high score.
                     var minesweeperHighscoreGrain = GrainFactory.GetGrain<IHighscoreCollectorGrain>(HighscoreLists.MinesweeperLuckyStart);

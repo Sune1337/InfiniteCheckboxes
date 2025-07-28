@@ -28,4 +28,14 @@
       <app-highscore-list name="MinesweeperLuckyStart"></app-highscore-list>
     }
   </app-tab>
+
+  <app-tab #tab6 title="One-click sweepers">
+    @if (tab6.active()) {
+      <app-highscore-list name="MinesweeperOneClickSweep">
+        <ng-template #scoreTemplate let-score>
+          {{ score.score | date: 'y-MM-dd' }}
+        </ng-template>
+      </app-highscore-list>
+    }
+  </app-tab>
 </app-tabs>
