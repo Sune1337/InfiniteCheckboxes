@@ -9,4 +9,5 @@ spec:
     includedContentTypes:
       - "text/css"
       - "text/javascript"
+      - "text/html"
 {{- end }}
