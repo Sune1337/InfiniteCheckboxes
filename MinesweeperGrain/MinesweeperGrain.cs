@@ -203,7 +203,7 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
         if (isFirstSweep && _minesweeperState.State.Mines.ContainsKey(uIndex))
         {
             // The user hit a mine on the first click. Move the mine to first free spot.
-            MoveMineToFirstFree(uIndex);
+            MoveMineToRandomCell(uIndex);
             await _minesweeperState.WriteStateAsync();
         }
 
@@ -513,12 +513,19 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
         };
     }
 
-    private void MoveMineToFirstFree(uint index)
+    private void MoveMineToRandomCell(uint index)
     {
         var gameSize = _minesweeperState.State.Width * _minesweeperState.State.Width;
-        for (var i = 0u; i < gameSize; i++)
+        if (gameSize == null)
         {
-            if (i != index && _minesweeperState.State.Mines.TryAdd(i, false))
+            throw new Exception("Width is null.");
+        }
+
+        // Prevent infinite loop if user somehow got the number of mines to equal gameSize.
+        while (_minesweeperState.State.Mines.Count < gameSize)
+        {
+            var randomIndex = Random.Shared.Next((int)gameSize);
+            if (randomIndex != index && _minesweeperState.State.Mines.TryAdd((uint)randomIndex, false))
             {
                 _minesweeperState.State.Mines.Remove(index);
                 return;
