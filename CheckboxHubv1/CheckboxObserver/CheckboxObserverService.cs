@@ -104,7 +104,7 @@ public class CheckboxObserverService : IHostedService, ICheckboxObserverManager
                 {
                     await _checkboxHubContext.Clients
                         .Group($"{HubGroups.CheckboxGroupPrefix}_{id}")
-                        .SendAsync("GoldSpot", byteId, values.Keys);
+                        .SendAsync("GoldSpot", byteId, values.Keys.ToArray());
                 };
 
                 _subscriptions.Add(id, checkboxPageUpdates);
