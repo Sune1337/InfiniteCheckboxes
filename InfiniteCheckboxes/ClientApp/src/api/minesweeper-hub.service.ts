@@ -108,15 +108,16 @@ export class MinesweeperHubService {
       this.hubConnectionSubscription = this.hubConnectionObservable
         .subscribe(async (hubConnection): Promise<void> => {
           // Subscribe to mine sweeper.
-          for (const idString of Object.keys(this.privateMinesweepers)) {
-            const id = parseInt(idString);
-            const minesweeper = await hubConnection.invoke(`MinesweeperSubscribe`, id);
-            if (!this.minesweeperSubscriptions[id]) {
+          for (const hexId of Object.keys(this.privateMinesweepers)) {
+            const bigIntId = BigInt(`0x${hexId}`);
+            const byteId = bigIntToMinimalBytes(bigIntId);
+            const minesweeper = await hubConnection.invoke(`MinesweeperSubscribe`, byteId);
+            if (!this.minesweeperSubscriptions[hexId]) {
               // Caller stopped subscribing to this page before we got first data.
               return;
             }
 
-            this.privateMinesweepers[id] = minesweeper;
+            this.privateMinesweepers[hexId] = minesweeper;
             this.minesweepers.next(this.privateMinesweepers);
           }
         });
