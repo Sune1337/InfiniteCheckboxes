@@ -11,13 +11,15 @@ import { getErrorMessage } from '../../utils/get-error-message';
 import { Minesweeper } from '../../api/models/minesweeper';
 import { CheckboxGrid } from '../checkbox-grid/checkbox-grid';
 import { bigIntToHexString } from '../../utils/bigint-utils';
+import { Timer } from './timer/timer';
 
 @Component({
   selector: 'app-mine-sweeper',
   imports: [
     FormsModule,
     CheckboxGrid,
-    AsyncPipe
+    AsyncPipe,
+    Timer
   ],
   templateUrl: './mine-sweeper.html',
   styleUrl: './mine-sweeper.scss'

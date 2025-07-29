@@ -7,16 +7,18 @@
       </div>
 
       @if (minesweeper(); as minesweeper) {
-        @if (minesweeper.EndUtc) {
+        <div>
+          <app-timer [startDate]="minesweeper.StartUtc" [endDate]="minesweeper.EndUtc"></app-timer>
+        </div>
+
+        @if (!minesweeper.StartUtc) {
+          <div>Click to start the game</div>
+        } @else if (minesweeper.EndUtc) {
           @if (minesweeper.Score) {
             <div>You won! Score: {{ minesweeper.Score }}</div>
           } @else {
             <div>Game over!</div>
           }
-        } @else {
-          <div>
-            GAME ON
-          </div>
         }
       } @else {
         <div>

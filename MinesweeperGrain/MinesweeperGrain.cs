@@ -25,6 +25,7 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
     private readonly IRedisMinesweeperUpdatePublisherManager _redisMinesweeperUpdatePublisherManager;
     private readonly SecretPcg32Factory _secretPcg32Factory;
 
+    private bool _creatingGame;
     private bool[]? _flags;
     private string _grainId = null!;
     private Pcg32? _minesweeperRng;
@@ -57,40 +58,50 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
 
     public async Task CreateGame(uint width, uint numberOfMines, string userId, bool luckyStart)
     {
-        if (width < 8 || width > 64)
+        try
         {
-            throw new ArgumentOutOfRangeException(nameof(width));
+            _creatingGame = true;
+
+            if (width < 8 || width > 64)
+            {
+                throw new ArgumentOutOfRangeException(nameof(width));
+            }
+
+            var gameSize = width * width;
+            var minMines = width * width * 0.125;
+            if (numberOfMines < minMines || numberOfMines > gameSize * 0.2)
+            {
+                throw new ArgumentOutOfRangeException(nameof(numberOfMines));
+            }
+
+            _minesweeperState.State.CreatedUtc = DateTime.UtcNow;
+            _minesweeperState.State.Width = width;
+            _minesweeperState.State.UserId = userId;
+            _minesweeperState.State.SweepLocationId = Random256Bit.GenerateHex();
+            _minesweeperState.State.FlagLocationId = Random256Bit.GenerateHex();
+
+            // Create mines.
+            GenerateMines(gameSize, numberOfMines);
+
+            // Get the checkbox-grains and register this game for callbacks.
+            var sweepGrain = GrainFactory.GetGrain<ICheckboxGrain>(_minesweeperState.State.SweepLocationId);
+            await sweepGrain.RegisterCallback<MinesweeperGrain>(this.GetGrainId());
+            var flagGrain = GrainFactory.GetGrain<ICheckboxGrain>(_minesweeperState.State.FlagLocationId);
+            await flagGrain.RegisterCallback<MinesweeperGrain>(this.GetGrainId());
+
+            if (luckyStart)
+            {
+                await LuckyStart(_minesweeperState.State.SweepLocationId, width, userId);
+            }
+            else
+            {
+                await _minesweeperState.WriteStateAsync();
+            }
         }
 
-        var gameSize = width * width;
-        var minMines = width * width * 0.125;
-        if (numberOfMines < minMines || numberOfMines > gameSize * 0.2)
+        finally
         {
-            throw new ArgumentOutOfRangeException(nameof(numberOfMines));
-        }
-
-        _minesweeperState.State.CreatedUtc = DateTime.UtcNow;
-        _minesweeperState.State.Width = width;
-        _minesweeperState.State.UserId = userId;
-        _minesweeperState.State.SweepLocationId = Random256Bit.GenerateHex();
-        _minesweeperState.State.FlagLocationId = Random256Bit.GenerateHex();
-
-        // Create mines.
-        GenerateMines(gameSize, numberOfMines);
-
-        // Get the checkbox-grains and register this game for callbacks.
-        var sweepGrain = GrainFactory.GetGrain<ICheckboxGrain>(_minesweeperState.State.SweepLocationId);
-        await sweepGrain.RegisterCallback<MinesweeperGrain>(this.GetGrainId());
-        var flagGrain = GrainFactory.GetGrain<ICheckboxGrain>(_minesweeperState.State.FlagLocationId);
-        await flagGrain.RegisterCallback<MinesweeperGrain>(this.GetGrainId());
-
-        if (luckyStart)
-        {
-            await LuckyStart(_minesweeperState.State.SweepLocationId, width, userId);
-        }
-        else
-        {
-            await _minesweeperState.WriteStateAsync();
+            _creatingGame = false;
         }
     }
 
@@ -141,6 +152,8 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
 
     public async Task<Dictionary<int, bool>?> WhenCheckboxesUpdated(string id, bool[] checkboxes, int index, bool value, string userId)
     {
+        Dictionary<int, bool>? result = null;
+
         if (_minesweeperState.State.EndUtc != null)
         {
             throw new Exception("The game has ended!");
@@ -164,20 +177,25 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
         }
 
         // Register when war started.
-        _minesweeperState.State.StartUtc ??= DateTime.UtcNow;
+        var saveAndPublishState = false;
+        if (!_creatingGame && _minesweeperState.State.StartUtc == null)
+        {
+            saveAndPublishState = true;
+            _minesweeperState.State.StartUtc = DateTime.UtcNow;
+        }
 
         if (id == _minesweeperState.State.FlagLocationId)
         {
             // User flagged something.
             checkboxes[index] = value;
             _flags = checkboxes;
-            return null;
+            goto saveAndPublishState;
         }
 
         if (!value)
         {
             // User unchecked something.
-            return null;
+            goto saveAndPublishState;
         }
 
         var uIndex = (uint)index;
@@ -197,14 +215,12 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
             // User hit a mine!
             _minesweeperState.State.Mines[uIndex] = true;
             _minesweeperState.State.EndUtc = DateTime.UtcNow;
-            await _minesweeperState.WriteStateAsync();
-            await _redisMinesweeperUpdatePublisherManager.PublishMinesweeperAsync(_grainId, MinesweeperStateToMinesweeper());
-            return null;
+            saveAndPublishState = true;
+            goto saveAndPublishState;
         }
 
         // Count surrounding mines.
         var mineCounts = new Dictionary<int, int>();
-        Dictionary<int, bool>? result = null;
         var numberOfSurroundingMines = CountSurroundingMines(_minesweeperState.State.Mines, uIndex, width);
         if (numberOfSurroundingMines > 0)
         {
@@ -246,6 +262,7 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
         if (countChecked == gameSize - _minesweeperState.State.Mines.Count)
         {
             // User finished!
+            saveAndPublishState = true;
             _minesweeperState.State.EndUtc = DateTime.UtcNow;
 
             // Calculate score
@@ -276,7 +293,12 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
                     await minesweeperHighscoreGrain.UpdateScore(_minesweeperState.State.UserId, _minesweeperState.State.Score.Value);
                 }
             }
+        }
 
+        saveAndPublishState:
+
+        if (saveAndPublishState)
+        {
             // Save state and publish.
             await _minesweeperState.WriteStateAsync();
             await _redisMinesweeperUpdatePublisherManager.PublishMinesweeperAsync(_grainId, MinesweeperStateToMinesweeper());
