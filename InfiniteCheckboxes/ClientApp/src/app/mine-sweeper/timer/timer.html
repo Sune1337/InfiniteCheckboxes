@@ -1,3 +1,7 @@
 <div>
-  {{ elapsedHours() | number:'2.0-0' }}:{{ elapsedMinutes() | number:'2.0-0' }}:{{ elapsedSeconds() | number:'2.0-0' }}
+  @if (elapsedHours()) {
+    {{ elapsedHours() | number:'2.0-0' }} :
+  }
+  {{ elapsedMinutes() | number:'2.0-0' }} :
+  {{ elapsedSeconds() | number:'2.0-0' }}
 </div>
