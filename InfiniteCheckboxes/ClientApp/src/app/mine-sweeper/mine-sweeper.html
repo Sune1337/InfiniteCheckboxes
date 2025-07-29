@@ -1,5 +1,6 @@
 <ng-template #headerTemplate>
   <div class="header">
+    <h1 class="for-seo-only">Play minesweeper</h1>
     <div class="flex-container">
       <div>
         <a href="javascript:void(0)" (click)="helpDialog.showModal()"><span class="help-link">?</span></a>
@@ -30,6 +31,7 @@
   @if (!minesweeper()) {
     <div class="new-game-container">
       <table>
+        <tbody>
         <tr>
           <td>Game-size:</td>
           <td>
@@ -58,6 +60,7 @@
             <button (click)="whenStartClick(true)">Lucky start</button>
           </td>
         </tr>
+        </tbody>
       </table>
     </div>
   } @else {

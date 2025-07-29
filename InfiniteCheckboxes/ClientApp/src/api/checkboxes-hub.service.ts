@@ -10,7 +10,7 @@ import { CheckboxStatistics } from './models/checkbox-statistics';
 import { GlobalStatistics } from './models/global-statistics';
 import { UserBalance } from './models/user-balance';
 import { createTrackedSubject } from '../utils/tracked-subject';
-import { getLocalUserId } from '../utils/user-utils';
+import { getLocalUserId } from '#userUtils';
 
 export type CheckboxPages = { [id: string]: boolean[] };
 export type GoldSpots = { [id: string]: number[] };

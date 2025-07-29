@@ -4,7 +4,7 @@ import { HubConnection, HubConnectionBuilder, RetryContext } from "@microsoft/si
 import { MessagePackHubProtocol } from '@microsoft/signalr-protocol-msgpack';
 import { HubStatus, HubStatusService } from './hub-status.service';
 import { createTrackedSubject } from '../utils/tracked-subject';
-import { getLocalUserId } from '../utils/user-utils';
+import { getLocalUserId } from '#userUtils';
 import { Minesweeper } from './models/minesweeper';
 import { bigIntToHexString, bigIntToMinimalBytes, bytesToHexString } from '../utils/bigint-utils';
 

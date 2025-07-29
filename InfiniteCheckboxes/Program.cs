@@ -85,6 +85,11 @@ if (!app.Environment.IsDevelopment())
 app.UseExceptionHandler();
 
 // Asp.Net requirements.
+app.UseDefaultFiles(new DefaultFilesOptions
+{
+    RedirectToAppendTrailingSlash = false
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.UseStaticFiles();
@@ -96,7 +101,13 @@ else
         OnPrepareResponse = context =>
         {
             string path = context.Context.Request.Path;
-            if (path.EndsWith(".css") || path.EndsWith(".js"))
+            if (path.EndsWith(".html"))
+            {
+                // Don't cache pre-rendered HTML files
+                context.Context.Response.Headers["Cache-Control"] = "no-cache, no-store";
+                context.Context.Response.Headers["Expires"] = "-1";
+            }
+            else if (path.EndsWith(".css") || path.EndsWith(".js"))
             {
                 context.Context.Response.Headers.Append("Cache-Control", $"public, max-age={31536000}");
             }
@@ -127,7 +138,7 @@ app.MapControllerRoute(
     pattern: "{controller}/{action}"
 );
 
-app.MapFallbackToFile("index.html", new StaticFileOptions
+app.MapSpaFallback(new StaticFileOptions
 {
     OnPrepareResponse = context =>
     {

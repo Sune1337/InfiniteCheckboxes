@@ -1,15 +1,15 @@
+import { AsyncPipe } from '@angular/common';
 import { AfterViewInit, Component, computed, effect, inject, OnDestroy, OnInit, signal, TemplateRef, ViewChild } from '@angular/core';
-import { HeaderService } from '../../utils/header.service';
-import { Meta, Title } from '@angular/platform-browser';
-import { combineLatest, filter, Subject, takeUntil } from 'rxjs';
-import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { MinesweeperHubService } from '../../api/minesweeper-hub.service';
+import { Meta, Title } from '@angular/platform-browser';
+import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
+import { combineLatest, filter, Subject, takeUntil } from 'rxjs';
+import { HeaderService } from '../../utils/header.service';
+import { MinesweeperHubService } from '#minesweeperHubService';
+import { CheckboxesHubService } from '#checkboxesHubService';
 import { getErrorMessage } from '../../utils/get-error-message';
 import { Minesweeper } from '../../api/models/minesweeper';
 import { CheckboxGrid } from '../checkbox-grid/checkbox-grid';
-import { CheckboxesHubService } from '../../api/checkboxes-hub.service';
-import { AsyncPipe } from '@angular/common';
 import { bigIntToHexString } from '../../utils/bigint-utils';
 
 @Component({

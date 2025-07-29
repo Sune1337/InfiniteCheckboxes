@@ -3,9 +3,9 @@ import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { ReactiveFormsModule } from "@angular/forms";
 import { filter, Subject, takeUntil } from 'rxjs';
-import { WarHubService, Wars } from '../../api/war-hub.service';
+import { CheckboxesHubService, CheckboxPageStatistics } from '#checkboxesHubService';
+import { WarHubService, Wars } from '#warHubService';
 import { War } from '../../api/models/war';
-import { CheckboxesHubService, CheckboxPageStatistics } from '../../api/checkboxes-hub.service';
 import { CheckboxGrid } from "../checkbox-grid/checkbox-grid";
 import { HeaderService } from '../../utils/header.service';
 

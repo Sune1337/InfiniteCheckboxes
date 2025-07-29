@@ -1,5 +1,5 @@
 import { HttpInterceptorFn } from '@angular/common/http';
-import { getLocalUser } from './user-utils';
+import { getLocalUser } from '#userUtils';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
 

@@ -5,7 +5,7 @@ import { MessagePackHubProtocol } from '@microsoft/signalr-protocol-msgpack';
 import { HubStatus, HubStatusService } from './hub-status.service';
 import { War } from './models/war';
 import { createTrackedSubject } from '../utils/tracked-subject';
-import { getLocalUserId } from '../utils/user-utils';
+import { getLocalUserId } from '#userUtils';
 
 export type Wars = { [id: number]: War };
 

@@ -1,15 +1,15 @@
 import { ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
-import { CdkConnectedOverlay, CdkOverlayOrigin } from '@angular/cdk/overlay';
 import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
-import { UserService } from '../../services/user-service';
-import { LocalUser } from '../../services/models/local-user';
-import { setLocalUser } from '../../utils/user-utils';
+import { CdkConnectedOverlay, CdkOverlayOrigin } from '@angular/cdk/overlay';
 import { RouterLink } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
+import { UserService } from '#userService';
+import { setLocalUser } from '#userUtils';
 import { Accordion } from './accordion/accordion';
 import { AccordionPanel } from './accordion/accordion-panel/accordion-panel';
 import { Top10Highscore } from './top10-highscore/top10-highscore';
 import { getErrorMessage } from '../../utils/get-error-message';
+import { LocalUser } from '../../services/models/local-user';
 
 @Component({
   selector: 'app-user-menu',

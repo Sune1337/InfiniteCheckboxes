@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { LocalUser } from './models/local-user';
 import { UserApiService } from '../api/user-api.service';
-import { getLocalUser, setLocalUser } from '../utils/user-utils';
+import { getLocalUser, setLocalUser } from '#userUtils';
 import { ReplaySubject } from 'rxjs';
 import { UserDetails } from '../api/models/user-details';
 
