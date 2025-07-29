@@ -65,6 +65,10 @@ export class Timer implements OnDestroy {
 
     const endDate = this.endDate() ?? new Date();
     let elapsedMs = endDate.getTime() - startDate.getTime();
+    if (elapsedMs < 0) {
+      // Time-difference between server and client can cause negative elapsed time.
+      elapsedMs = 0;
+    }
 
     this.elapsedHours.set(Math.floor(elapsedMs / 3600000));
     elapsedMs -= this.elapsedHours() * 3600000;
