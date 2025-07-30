@@ -23,8 +23,6 @@
 /* flag */
 ::ng-deep input[type="checkbox"]:not(:checked).flag {
   appearance: none;
-  width: 20px;
-  height: 20px;
   position: relative;
 
   &::before {
@@ -117,8 +115,6 @@
 /* counts */
 ::ng-deep input[type="checkbox"][class*="count-"]:checked {
   appearance: none;
-  width: 24px;
-  height: 24px;
   border: 1px solid #ccc;
   background: #fff;
   position: relative;

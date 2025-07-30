@@ -1,38 +1,31 @@
-<button cdkOverlayOrigin #trigger="cdkOverlayOrigin" class="hamburger-button" (click)="isMenuOpen = !isMenuOpen" aria-label="User menu">
+<button class="hamburger-button" (click)="op.toggle($event)" aria-label="User menu">
   <span class="hamburger-line"></span>
   <span class="hamburger-line"></span>
   <span class="hamburger-line"></span>
 </button>
 
-<ng-template
-  cdkConnectedOverlay
-  [cdkConnectedOverlayOrigin]="trigger"
-  [cdkConnectedOverlayOpen]="isMenuOpen"
-  [cdkConnectedOverlayHasBackdrop]="true"
-  (backdropClick)="isMenuOpen = false"
->
-  <div class="user-popup">
-
+<p-popover #op styleClass="user-popup">
+  @if (op.overlayVisible) {
     <app-accordion>
       <app-accordion-panel title="Navigation">
         <nav>
           <div>
-            <h4><a (click)="isMenuOpen = false" routerLink="/Checkboxes">Checkboxes</a></h4>
+            <h4><a (click)="op.hide()" routerLink="/Checkboxes">Checkboxes</a></h4>
             <p>How many checkboxes can you check?</p>
           </div>
 
           <div>
-            <h4><a (click)="isMenuOpen = false" routerLink="/War">WAR</a></h4>
+            <h4><a (click)="op.hide()" routerLink="/War">WAR</a></h4>
             <p>A game where you fight to check or uncheck all boxes on a map of defined size.</p>
           </div>
 
           <div>
-            <h4><a (click)="isMenuOpen = false" routerLink="/Minesweeper">Minesweeper</a></h4>
+            <h4><a (click)="op.hide()" routerLink="/Minesweeper">Minesweeper</a></h4>
             <p>Find all the mines or die trying.</p>
           </div>
 
           <div>
-            <h4><a (click)="isMenuOpen = false" routerLink="/About">About this site</a></h4>
+            <h4><a (click)="op.hide()" routerLink="/About">About this site</a></h4>
             <p>Information about this site</p>
           </div>
         </nav>
@@ -72,6 +65,5 @@
         }
       </app-accordion-panel>
     </app-accordion>
-  </div>
-</ng-template>
-
+  }
+</p-popover>

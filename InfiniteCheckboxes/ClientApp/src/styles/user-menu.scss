@@ -1,0 +1,18 @@
+.user-popup {
+  border: 1px solid rgba(0, 0, 0, 0.65);
+  background-color: rgba(255, 255, 255, 0.9);
+  width: min(500px, 100%);
+  box-sizing: border-box;
+
+  .p-popover-content {
+    padding: 0;
+  }
+}
+
+/* Dark mode styles */
+@media (prefers-color-scheme: dark) {
+  .user-popup {
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    background-color: rgba(0, 0, 0, 0.9);
+  }
+}

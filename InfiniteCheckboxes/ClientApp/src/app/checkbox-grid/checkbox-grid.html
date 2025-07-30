@@ -1,9 +1,15 @@
 @if (checkBoxPages()) {
-  <cdk-virtual-scroll-viewport [itemSize]="maxSize() ? 0 : itemSize()" class="scroll-container" (scrolledIndexChange)="onScroll()">
-    <div *cdkVirtualFor="let item of checkBoxPages(); trackBy: trackCheckboxPage"
-         class="scroll-item width-{{ maxSize() ? 0 : gridWidth() }}"
-    >
-      <div class="checkbox-grid"
+  <p-virtualscroller
+    [items]="checkBoxPages()"
+    [itemSize]="maxSize() ? 0 : itemSize()"
+    styleClass="scroll-container"
+    (onScroll)="onScroll()"
+    [trackBy]="trackCheckboxPage"
+    [numToleratedItems]="1"
+    scrollHeight="100%"
+  >
+    <ng-template #item let-item let-options="options">
+      <div class="scroll-item width-{{ maxSize() ? 0 : gridWidth() }}"
            [style.grid-template-columns]="gridColumns()"
            (change)="whenCheckboxChanged($event)"
            (appContextMenu)="whenContextMenu($event)"
@@ -17,6 +23,6 @@
           >
         }
       </div>
-    </div>
-  </cdk-virtual-scroll-viewport>
+    </ng-template>
+  </p-virtualscroller>
 }

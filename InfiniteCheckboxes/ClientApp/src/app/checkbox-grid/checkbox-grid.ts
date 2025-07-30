@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, OnDestroy, output, signal, ViewChild, WritableSignal } from '@angular/core';
-import { CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, OnDestroy, OnInit, output, signal, untracked, ViewChild, WritableSignal } from '@angular/core';
+import { Scroller } from 'primeng/scroller';
 import { Subject, takeUntil } from 'rxjs';
 import { CheckboxesHubService, CheckboxPages, GoldSpots } from '#checkboxesHubService';
 import { LimitPipe } from '../../utils/limit-pipe';
@@ -16,17 +16,15 @@ interface CheckboxPage {
 @Component({
   selector: 'app-checkbox-grid',
   imports: [
-    CdkFixedSizeVirtualScroll,
-    CdkVirtualForOf,
-    CdkVirtualScrollViewport,
     LimitPipe,
-    ContextMenuDirective
+    ContextMenuDirective,
+    Scroller
   ],
   templateUrl: './checkbox-grid.html',
   styleUrl: './checkbox-grid.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class CheckboxGrid implements OnDestroy {
+export class CheckboxGrid implements OnInit, OnDestroy {
 
   public gridWidth = input(32);
   public maxSize = input(0);
@@ -43,8 +41,8 @@ export class CheckboxGrid implements OnDestroy {
   // The returned value of itemSize must match the values in checkboxes.scss.
   protected itemSize = computed<number>(() => 4096 / this.gridWidth() * this.rowHeight);
 
-  @ViewChild(CdkVirtualScrollViewport)
-  private viewport!: CdkVirtualScrollViewport;
+  @ViewChild(Scroller)
+  private scroller!: Scroller;
 
   private rowHeight = 24;
   private subscribedPageIds: bigint[] = [];
@@ -70,7 +68,7 @@ export class CheckboxGrid implements OnDestroy {
       .subscribe(goldSpots => this.goldSpotsUpdated(goldSpots));
 
     // Handle changes to page-width.
-    effect(() => this.whenPageWidthChange(this.gridWidth()));
+    effect(() => this.whenPageWidthChange(this.gridWidth(), untracked(this.checkBoxPages)));
 
     // Navigate to page from input.
     effect(() => {
@@ -88,6 +86,11 @@ export class CheckboxGrid implements OnDestroy {
         lastCheckboxStyles = this.checkboxStyles();
       }
     });
+  }
+
+  ngOnInit() {
+    // Emit a default empty checkbox page.
+    this.checkBoxPages.set([this.createCheckboxPage(this.MinPageId)]);
   }
 
   ngOnDestroy() {
@@ -108,50 +111,51 @@ export class CheckboxGrid implements OnDestroy {
       return;
     }
 
-    const existingPage = this.checkBoxPages()?.find(p => p.pageId === pageId);
-    this.checkBoxPages.set([existingPage ?? this.createCheckboxPage(pageId)]);
-
-    if (this.viewport) {
-      // Reset the scroll position to top
-      this.viewport.scrollToIndex(0);
-
-      const firstRenderedItem = this.viewport.getRenderedRange().start;
-      if (firstRenderedItem == 0) {
-        // We're currently watching the first page, so the onscroll event will not be triggered by the virtual scroll.
-        this.onScroll();
-      }
+    const newPages = [];
+    let scrollTop = 0;
+    let startRenderPageId = 0;
+    const pageIdMinusOne = pageId - BigInt(1);
+    if (!this.maxSize() && pageIdMinusOne >= 0) {
+      newPages.push(this.checkBoxPages()?.find(p => p.pageId === pageIdMinusOne) ?? this.createCheckboxPage(pageIdMinusOne));
+      scrollTop = this.itemSize();
+      startRenderPageId = 1;
     }
+
+    newPages.push(this.checkBoxPages()?.find(p => p.pageId === pageId) ?? this.createCheckboxPage(pageId));
+
+    const pageIdPlusOne = pageId + BigInt(1);
+    if (!this.maxSize() && pageIdPlusOne <= this.MaxPageId) {
+      newPages.push(this.checkBoxPages()?.find(p => p.pageId === pageIdPlusOne) ?? this.createCheckboxPage(pageIdPlusOne));
+    }
+    this.checkBoxPages.set(newPages);
+    this.syncSubscriptions(startRenderPageId, startRenderPageId);
+
+    setTimeout(() => this.scroller.scrollTo({ top: scrollTop }));
   }
 
   protected onScroll = (): void => {
-    if (!this.viewport) {
+    if (!this.scroller) {
       return;
     }
 
-    if (this.maxSize() > 0) {
-      this.syncSubscriptions(0, 0);
-      return;
-    }
-
-    const renderedRange = this.viewport.getRenderedRange();
-    const total = this.viewport.getDataLength();
-    if (renderedRange.start == 0 && renderedRange.end == 0) {
-      // Viewport has not rendered yet.
-      return;
-    }
+    const scrollTop = this.scroller.getElementRef().nativeElement.scrollTop;
+    const clientHeight = this.scroller.getElementRef().nativeElement.clientHeight;
+    const firstRenderedIndex = Math.floor(scrollTop / this.itemSize());
+    const lastRenderedIndex = Math.floor((scrollTop + clientHeight) / this.itemSize());
+    const total = this.checkBoxPages()?.length ?? 0;
 
     // If we're near the end, add more items
-    if (renderedRange.end > total - 1) {
+    if (lastRenderedIndex >= total - 1) {
       this.addItemsAtEnd();
     }
 
     // If we're near the start, add more items
     let addedItems = 0;
-    if (renderedRange.start < 1) {
-      addedItems = this.addItemsAtStart();
+    if (firstRenderedIndex < 1) {
+      addedItems = this.addItemsAtStart(scrollTop);
     }
 
-    this.syncSubscriptions(renderedRange.start + addedItems, renderedRange.end + addedItems);
+    this.syncSubscriptions(firstRenderedIndex + addedItems, lastRenderedIndex + addedItems);
   }
 
   protected whenCheckboxChanged = async (event: Event): Promise<void> => {
@@ -174,7 +178,7 @@ export class CheckboxGrid implements OnDestroy {
       return;
     }
 
-    const pageId = checkboxElement.closest('.checkbox-grid')?.getAttribute('page-id')
+    const pageId = checkboxElement.closest('.scroll-item')?.getAttribute('page-id')
     if (!pageId) {
       return;
     }
@@ -283,23 +287,24 @@ export class CheckboxGrid implements OnDestroy {
     this.checkBoxPages.set(checkboxPages);
   }
 
-  private whenPageWidthChange = (gridWidth: number) => {
-    if (!this.viewport) {
+  private whenPageWidthChange = (gridWidth: number, checkboxPages: CheckboxPage[] | null) => {
+    const nativeElement = this.scroller?.getElementRef()?.nativeElement;
+    if (!nativeElement || !checkboxPages) {
       return;
     }
 
     const oldItemSize = 4096 / this.lastWidth * this.rowHeight;
-    const itemIndexAtTop = this.viewport.measureScrollOffset() / oldItemSize;
+    const itemIndexAtTop = nativeElement.scrollTop / oldItemSize;
     const newScrollOffset = itemIndexAtTop * this.itemSize();
-    const currentContentSize = this.viewport.getDataLength() * oldItemSize;
+    const currentContentSize = checkboxPages.length * oldItemSize;
     this.lastWidth = gridWidth;
 
-    if (newScrollOffset + this.viewport.getViewportSize() < currentContentSize) {
-      this.viewport.scrollTo({ top: newScrollOffset });
+    if (newScrollOffset + nativeElement.clientHeight < currentContentSize) {
+      nativeElement.scrollTo({ top: newScrollOffset });
     } else {
-      // We want to scroll further down than can currently be rendered. Must let the scroll-viewport re-render.
+      // We want to scroll further down than can currently be rendered. Must let the scroller re-render.
       setTimeout(() => {
-        this.viewport.scrollTo({ top: newScrollOffset });
+        nativeElement.scrollTo({ top: newScrollOffset });
       });
     }
   }
@@ -314,7 +319,7 @@ export class CheckboxGrid implements OnDestroy {
     const newItems: CheckboxPage[] = [];
     let nextIndex = lastIndex + BigInt(1);
 
-    for (let i = 0; i < 5 && nextIndex <= this.MaxPageId; i++) {
+    for (let i = 0; i < 1 && nextIndex <= this.MaxPageId; i++) {
       newItems.push(this.createCheckboxPage(nextIndex));
       nextIndex = nextIndex + BigInt(1);
     }
@@ -322,7 +327,7 @@ export class CheckboxGrid implements OnDestroy {
     this.checkBoxPages.set([...currentItems, ...newItems]);
   }
 
-  private addItemsAtStart(): number {
+  private addItemsAtStart(scrollTop: any): number {
     const currentItems = this.checkBoxPages();
     if (!currentItems?.length) return 0;
 
@@ -332,17 +337,16 @@ export class CheckboxGrid implements OnDestroy {
     const newItems: CheckboxPage[] = [];
     let prevIndex = firstIndex - BigInt(1);
 
-    for (let i = 0; i < 5 && prevIndex >= this.MinPageId; i++) {
+    for (let i = 0; i < 1 && prevIndex >= this.MinPageId; i++) {
       newItems.unshift(this.createCheckboxPage(prevIndex));
       prevIndex = prevIndex - BigInt(1);
     }
 
     // Maintain scroll position when adding items at start
-    const oldScrollOffset = this.viewport.measureScrollOffset();
     this.checkBoxPages.set([...newItems, ...currentItems]);
     setTimeout(() => {
-      const newScrollOffset = oldScrollOffset + (newItems.length * this.itemSize());
-      this.viewport.scrollTo({ top: newScrollOffset });
+      const newScrollOffset = scrollTop + (newItems.length * this.itemSize());
+      this.scroller.scrollTo({ top: newScrollOffset });
     });
 
     return newItems.length;

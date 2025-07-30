@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { CdkConnectedOverlay, CdkOverlayOrigin } from '@angular/cdk/overlay';
 import { RouterLink } from '@angular/router';
+import { Popover } from 'primeng/popover';
 import { Subject, takeUntil } from 'rxjs';
 import { UserService } from '#userService';
 import { setLocalUser } from '#userUtils';
@@ -14,13 +14,12 @@ import { LocalUser } from '../../services/models/local-user';
 @Component({
   selector: 'app-user-menu',
   imports: [
-    CdkOverlayOrigin,
-    CdkConnectedOverlay,
     FormsModule,
     RouterLink,
     Accordion,
     AccordionPanel,
-    Top10Highscore
+    Top10Highscore,
+    Popover
   ],
   templateUrl: './user-menu.html',
   styleUrl: './user-menu.scss',
@@ -28,7 +27,6 @@ import { LocalUser } from '../../services/models/local-user';
 })
 export class UserMenu implements OnInit, OnDestroy {
 
-  isMenuOpen = false;
   localUser = signal<LocalUser | null>(null);
 
   private userService = inject(UserService);

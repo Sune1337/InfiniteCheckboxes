@@ -7,13 +7,13 @@ import { Directive, ElementRef, EventEmitter, OnDestroy, OnInit, Output } from '
 export class ScrollHeightObserverDirective implements OnInit, OnDestroy {
   @Output() scrollHeightChange = new EventEmitter<number>();
 
-  private observer: MutationObserver;
+  private resizeObserver: ResizeObserver;
   private lastScrollHeight: number;
 
   constructor(private elementRef: ElementRef) {
     this.lastScrollHeight = this.elementRef.nativeElement.scrollHeight;
 
-    this.observer = new MutationObserver(() => {
+    this.resizeObserver = new ResizeObserver(() => {
       const newScrollHeight = this.elementRef.nativeElement.scrollHeight;
       if (newScrollHeight !== this.lastScrollHeight) {
         this.lastScrollHeight = newScrollHeight;
@@ -23,14 +23,10 @@ export class ScrollHeightObserverDirective implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.observer.observe(this.elementRef.nativeElement, {
-      attributes: true,
-      childList: true,
-      subtree: true
-    });
+    this.resizeObserver.observe(this.elementRef.nativeElement);
   }
 
   ngOnDestroy() {
-    this.observer.disconnect();
+    this.resizeObserver.disconnect();
   }
 }
