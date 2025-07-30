@@ -1,7 +1,9 @@
-<button class="accordion" [class]="{ 'active': this.isOpen() }" (click)="togglePanel()">{{ title() }}</button>
-<div scrollHeightObserver
-     (scrollHeightChange)="whenScrollHeightChange($event)"
-     [style]="{ 'max-height': `${this.isOpen() ? scrollHeight() : 0}px` }" class="panel"
-     [class]="{ 'active': this.isOpen() }">
-  <ng-content></ng-content>
+<div class="accordion">
+    <button [class]="{ 'active': this.isOpen() }" (click)="togglePanel()">{{ title() }}</button>
+    <div scrollHeightObserver
+         (scrollHeightChange)="whenScrollHeightChange($event)"
+         [style]="{ 'max-height': `${this.isOpen() ? scrollHeight() : 0}px` }" class="panel"
+         [class]="{ 'active': this.isOpen() }">
+      <ng-content></ng-content>
+    </div>
 </div>

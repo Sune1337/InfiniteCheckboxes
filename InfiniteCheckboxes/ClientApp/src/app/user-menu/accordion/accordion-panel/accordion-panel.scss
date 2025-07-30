@@ -1,24 +1,34 @@
 /* Style the buttons that are used to open and close the panels */
 .accordion {
-  cursor: pointer;
-  padding: 1rem;
-  width: 100%;
-  text-align: left;
-  border: none;
-  outline: none;
-  font-size: 1rem;
-  background-color: #eca1a1;
-  color: black;
-  transition: 0.2s;
+  border: solid;
+  border-width: 0 0 1px 0;
+  border-color: var(--p-content-border-color);
 
-  /* Add a background color to the button if it is clicked on and when you hover it */
-  &.active, &:hover {
-    background-color: #ce3636;
-    color: #e8e8e8;
+  button {
+    border: none;
+    cursor: pointer;
+    padding: 1rem;
+    width: 100%;
+    text-align: left;
+    outline: none;
+    font-size: 1rem;
+    background-color: var(--p-content-background);
+    color: var(--p-text-muted-color);
+
+    &.active {
+      border: dashed;
+      border-width: 0 0 1px 0;
+      border-color: var(--p-content-border-color);
+    }
+
+    /* Add a background color to the button if it is clicked on and when you hover it */
+    &.active, &:hover {
+      color: var(--p-text-color);
+    }
   }
 }
 
-/* Style the accordion panel. */
+/* Animate accordion panels. */
 .panel {
   padding: 0 1rem;
   overflow: hidden;
