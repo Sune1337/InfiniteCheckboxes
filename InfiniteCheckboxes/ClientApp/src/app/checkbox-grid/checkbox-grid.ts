@@ -136,7 +136,7 @@ export class CheckboxGrid implements OnInit, OnDestroy {
   }
 
   protected onScroll = (): void => {
-    if (!this.scroller) {
+    if (!this.scroller || this.maxSize()) {
       return;
     }
 
