@@ -265,12 +265,16 @@ public class MinesweeperGrain : Grain, IMinesweeperGrain, ICheckboxCallbackGrain
             saveAndPublishState = true;
             _minesweeperState.State.EndUtc = DateTime.UtcNow;
 
-            // Calculate score
-            var mineDensity = _minesweeperState.State.Mines.Count / (double)gameSize;
-            var sizeRatio = width / 8.0;
-            var playTime = (_minesweeperState.State.EndUtc.Value - _minesweeperState.State.StartUtc.Value).TotalSeconds;
-            var smallBoardPunishment = Math.Log(gameSize - 62, 4096);
-            _minesweeperState.State.Score = (ulong)Math.Round(mineDensity * sizeRatio / playTime * smallBoardPunishment * 100000);
+            _minesweeperState.State.Score = 0;
+            if (_minesweeperState.State.StartUtc != null)
+            {
+                // Calculate score
+                var mineDensity = _minesweeperState.State.Mines.Count / (double)gameSize;
+                var sizeRatio = width / 8.0;
+                var playTime = (_minesweeperState.State.EndUtc.Value - _minesweeperState.State.StartUtc.Value).TotalSeconds;
+                var smallBoardPunishment = Math.Log(gameSize - 62, 4096);
+                _minesweeperState.State.Score = (ulong)Math.Round(mineDensity * sizeRatio / playTime * smallBoardPunishment * 100000);
+            }
 
             if (!(isFirstSweep && _minesweeperState.State.IsLuckyStart) && _minesweeperState.State.UserId != null)
             {

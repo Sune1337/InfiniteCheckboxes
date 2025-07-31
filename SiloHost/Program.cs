@@ -100,8 +100,7 @@ var builder = Host.CreateDefaultBuilder(args)
                 options.DatabaseName = "MinesweeperGrains";
                 options.CreateShardKeyForCosmos = false;
             })
-            .ConfigureEndpoints(TcpPorts.GetNextFreeTcpPort(11111), TcpPorts.GetNextFreeTcpPort(30000))
-            .UseDashboard(options => { });
+            .ConfigureEndpoints(TcpPorts.GetNextFreeTcpPort(11111), TcpPorts.GetNextFreeTcpPort(30000));
 
         var podNamespace = hostBuilderContext.Configuration.GetValue<string>("POD_NAMESPACE");
         if (string.IsNullOrEmpty(podNamespace) == false)
