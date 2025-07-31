@@ -67,6 +67,11 @@ public class DebounceValues<TValue>
         }
     }
 
+    public void UnregisterEmitters()
+    {
+        EmitValue = null;
+    }
+
     #endregion
 
     #region Methods

@@ -1,12 +1,10 @@
 using APIKeyAuthentication;
 
 using CheckboxHubv1;
-using CheckboxHubv1.Options;
 
 using InfiniteCheckboxes.Utils;
 
 using MinesweeperHubv1;
-using MinesweeperHubv1.Options;
 
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -16,10 +14,11 @@ using Orleans.Providers.MongoDB.Configuration;
 
 using Prometheus;
 
+using RedisMessages.Options;
+
 using Serilog;
 
 using WarHubv1;
-using WarHubv1.Options;
 
 Serilog.Debugging.SelfLog.Enable(msg => Console.Error.WriteLine(msg));
 
@@ -29,10 +28,7 @@ builder.Host
     .UseSerilog((hostBuilderContext, loggerConfiguration) => { loggerConfiguration.ReadFrom.Configuration(hostBuilderContext.Configuration); });
 
 // Configure options.
-builder.Services.Configure<CheckboxObserverOptions>(o => o.RedisConnectionString = builder.Configuration.GetConnectionString("PubSubRedis"));
-builder.Services.Configure<UserObserverOptions>(o => o.RedisConnectionString = builder.Configuration.GetConnectionString("PubSubRedis"));
-builder.Services.Configure<WarObserverOptions>(o => o.RedisConnectionString = builder.Configuration.GetConnectionString("PubSubRedis"));
-builder.Services.Configure<MinesweeperObserverOptions>(o => o.RedisConnectionString = builder.Configuration.GetConnectionString("PubSubRedis"));
+builder.Services.Configure<RedisPubSubOptions>(o => o.RedisConnectionString = builder.Configuration.GetConnectionString("PubSubRedis"));
 
 // Start the Orleans client before services that might use it.
 builder.UseOrleansClient(clientBuilder =>

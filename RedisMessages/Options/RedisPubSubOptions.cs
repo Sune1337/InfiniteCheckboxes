@@ -1,6 +1,6 @@
-namespace CheckboxHubv1.Options;
+namespace RedisMessages.Options;
 
-public class UserObserverOptions
+public class RedisPubSubOptions
 {
     #region Public Properties
 

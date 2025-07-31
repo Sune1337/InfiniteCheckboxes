@@ -26,7 +26,7 @@ public class RedisCheckboxUpdatePublisherService : IHostedService, IRedisCheckbo
 
     #region Constructors and Destructors
 
-    public RedisCheckboxUpdatePublisherService(IOptions<RedisMessagePublisherOptions> options)
+    public RedisCheckboxUpdatePublisherService(IOptions<RedisPubSubOptions> options)
     {
         if (options.Value.RedisConnectionString == null)
         {

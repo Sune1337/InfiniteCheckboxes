@@ -67,6 +67,11 @@ public class DebounceValues<TKey, TValue> where TKey : notnull
         }
     }
 
+    public void UnregisterEmitters()
+    {
+        EmitValues = null;
+    }
+
     #endregion
 
     #region Methods

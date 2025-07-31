@@ -28,7 +28,7 @@ public class RedisMinesweeperUpdatePublisherService : IHostedService, IRedisMine
 
     #region Constructors and Destructors
 
-    public RedisMinesweeperUpdatePublisherService(IOptions<RedisMessagePublisherOptions> options)
+    public RedisMinesweeperUpdatePublisherService(IOptions<RedisPubSubOptions> options)
     {
         if (options.Value.RedisConnectionString == null)
         {

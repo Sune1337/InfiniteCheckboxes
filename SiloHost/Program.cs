@@ -27,7 +27,7 @@ var builder = Host.CreateDefaultBuilder(args)
     .ConfigureServices((hostBuilderContext, serviceCollection) =>
     {
         // Configure options.
-        serviceCollection.Configure<RedisMessagePublisherOptions>(o => o.RedisConnectionString = hostBuilderContext.Configuration.GetConnectionString("PubSubRedis"));
+        serviceCollection.Configure<RedisPubSubOptions>(o => o.RedisConnectionString = hostBuilderContext.Configuration.GetConnectionString("PubSubRedis"));
         serviceCollection.Configure<SecretPcg32Options>("GoldDiggerRng", hostBuilderContext.Configuration.GetSection("GoldDiggerRng"));
         serviceCollection.Configure<SecretPcg32Options>("MinesweeperRng", hostBuilderContext.Configuration.GetSection("MinesweeperRng"));
 

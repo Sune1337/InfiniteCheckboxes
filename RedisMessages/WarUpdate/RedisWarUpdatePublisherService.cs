@@ -28,7 +28,7 @@ public class RedisWarUpdatePublisherService : IHostedService, IRedisWarUpdatePub
 
     #region Constructors and Destructors
 
-    public RedisWarUpdatePublisherService(IOptions<RedisMessagePublisherOptions> options)
+    public RedisWarUpdatePublisherService(IOptions<RedisPubSubOptions> options)
     {
         if (options.Value.RedisConnectionString == null)
         {
