@@ -2,6 +2,7 @@ import { AfterViewInit, ChangeDetectionStrategy, Component, inject, OnDestroy, O
 import { FormsModule } from '@angular/forms';
 import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
+import { Dialog } from 'primeng/dialog';
 import { filter, Subject, takeUntil } from 'rxjs';
 import { CheckboxGrid } from '../checkbox-grid/checkbox-grid';
 import { CheckboxesHubService } from '#checkboxesHubService';
@@ -14,7 +15,8 @@ import { UserBalance } from '../../api/models/user-balance';
   styleUrl: './checkboxes.scss',
   imports: [
     FormsModule,
-    CheckboxGrid
+    CheckboxGrid,
+    Dialog
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -25,6 +27,7 @@ export class Checkboxes implements OnInit, AfterViewInit, OnDestroy {
   protected pageInput = signal<string>('');
   protected numberOfChecked = signal<number | null>(null);
   protected user = signal<UserBalance | null>(null)
+  protected helpDialogOpen = signal(false);
 
   @ViewChild(CheckboxGrid)
   private checkboxGrid!: CheckboxGrid;
@@ -130,12 +133,6 @@ export class Checkboxes implements OnInit, AfterViewInit, OnDestroy {
       this.checkboxGrid.navigateToPage(pageInputText);
     } else {
       this.router.navigate(['Checkboxes', pageInputText]);
-    }
-  }
-
-  protected whenDialogClick = (event: MouseEvent, helpDialog: HTMLDialogElement): void => {
-    if (event.target === helpDialog) {
-      helpDialog.close();
     }
   }
 }

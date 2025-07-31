@@ -3,6 +3,7 @@ import { AfterViewInit, Component, computed, effect, inject, OnDestroy, OnInit, 
 import { FormsModule } from '@angular/forms';
 import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
+import { Dialog } from 'primeng/dialog';
 import { combineLatest, filter, Subject, takeUntil } from 'rxjs';
 import { HeaderService } from '../../utils/header.service';
 import { MinesweeperHubService } from '#minesweeperHubService';
@@ -19,7 +20,8 @@ import { Timer } from './timer/timer';
     FormsModule,
     CheckboxGrid,
     AsyncPipe,
-    Timer
+    Timer,
+    Dialog
   ],
   templateUrl: './mine-sweeper.html',
   styleUrl: './mine-sweeper.scss'
@@ -37,6 +39,7 @@ export class MinesweeperComponent implements OnInit, AfterViewInit, OnDestroy {
   protected minesweeper = signal<Minesweeper | null>(null);
   protected flagPage = signal<boolean[] | null>(null);
   protected checkboxStyles = new Subject<(string | null)[]>();
+  protected helpDialogOpen = signal(false);
 
   private bigintZero = BigInt(0);
   private currentFlagPageId = signal(BigInt(0));
@@ -160,12 +163,6 @@ export class MinesweeperComponent implements OnInit, AfterViewInit, OnDestroy {
     this.headerService.setHeader(null);
     this.ngUnsubscribe.next();
     this.ngUnsubscribe.complete();
-  }
-
-  protected whenDialogClick = (event: MouseEvent, helpDialog: HTMLDialogElement): void => {
-    if (event.target === helpDialog) {
-      helpDialog.close();
-    }
   }
 
   protected whenStartClick = async (luckyStart: boolean): Promise<void> => {

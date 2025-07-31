@@ -3,7 +3,7 @@
     <h1 class="for-seo-only">Play multiplayer checkbox war</h1>
     <div class="flex-container">
       <div>
-        <a href="javascript:void(0)" (click)="helpDialog.showModal()"><span class="help-link">?</span></a>
+        <a href="javascript:void(0)" (click)="helpDialogOpen.set(true)"><span class="help-link">?</span></a>
       </div>
 
       <div>
@@ -32,11 +32,8 @@
   }
 </div>
 
-<dialog #helpDialog id="help-dialog" (click)="whenDialogClick($event, helpDialog)">
-  <div class="help-dialog-content">
-    <h3>This is WAR!</h3>
-    <p>
-      The goal is to check or uncheck all checkboxes. Just pick a side and start fighting.
-    </p>
-  </div>
-</dialog>
+<p-dialog header="This is WAR!" [modal]="true" [(visible)]="helpDialogOpen" [dismissableMask]="true" styleClass="help-dialog">
+  <p>
+    The goal is to check or uncheck all checkboxes. Just pick a side and start fighting.
+  </p>
+</p-dialog>

@@ -2,6 +2,7 @@ import { AfterViewInit, ChangeDetectionStrategy, Component, inject, OnDestroy, O
 import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { ReactiveFormsModule } from "@angular/forms";
+import { Dialog } from 'primeng/dialog';
 import { filter, Subject, takeUntil } from 'rxjs';
 import { CheckboxesHubService, CheckboxPageStatistics } from '#checkboxesHubService';
 import { WarHubService, Wars } from '#warHubService';
@@ -13,7 +14,8 @@ import { HeaderService } from '../../utils/header.service';
   selector: 'app-war',
   imports: [
     CheckboxGrid,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    Dialog
   ],
   templateUrl: './war.html',
   styleUrl: './war.scss',
@@ -23,6 +25,7 @@ export class WarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   protected war = signal<War | null>(null);
   protected numberOfPlayers = signal(0);
+  protected helpDialogOpen = signal(false);
 
   @ViewChild(CheckboxGrid)
   private checkboxGrid!: CheckboxGrid;
@@ -93,12 +96,6 @@ export class WarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.updateSubscriptions(-1);
     this.ngUnsubscribe.next();
     this.ngUnsubscribe.complete();
-  }
-
-  protected whenDialogClick = (event: MouseEvent, helpDialog: HTMLDialogElement): void => {
-    if (event.target === helpDialog) {
-      helpDialog.close();
-    }
   }
 
   protected gotoCurrentWar = async (): Promise<void> => {
