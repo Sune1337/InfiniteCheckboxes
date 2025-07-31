@@ -6,6 +6,7 @@ import { FloatLabel } from 'primeng/floatlabel';
 import { InputText } from 'primeng/inputtext';
 import { Password } from 'primeng/password';
 import { Button } from 'primeng/button';
+import { MessageService } from 'primeng/api';
 import { Subject, takeUntil } from 'rxjs';
 import { UserService } from '#userService';
 import { setLocalUser } from '#userUtils';
@@ -38,6 +39,7 @@ export class UserMenu implements OnInit, OnDestroy {
   localUser = signal<LocalUser | null>(null);
 
   private userService = inject(UserService);
+  private messageService = inject(MessageService);
 
   // Keep track of subscriptions to clean up when component destroys.
   private ngUnsubscribe = new Subject<void>();
@@ -65,7 +67,7 @@ export class UserMenu implements OnInit, OnDestroy {
       await this.userService.setUserDetails(localUser);
       location.reload();
     } catch (error: any) {
-      alert(getErrorMessage(error));
+      this.messageService.add({ severity: 'error', detail: getErrorMessage(error) });
     }
   }
 

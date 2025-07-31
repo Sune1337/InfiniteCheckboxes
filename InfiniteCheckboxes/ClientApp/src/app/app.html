@@ -13,3 +13,11 @@
     <router-outlet></router-outlet>
   </div>
 </div>
+
+<p-toast>
+  <ng-template let-message>
+    <div class="p-toast-message-text">
+      <div class="p-toast-detail">{{ message.detail }}</div>
+    </div>
+  </ng-template>
+</p-toast>

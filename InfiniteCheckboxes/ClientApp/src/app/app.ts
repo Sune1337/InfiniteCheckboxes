@@ -1,12 +1,15 @@
 import { ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit, ViewChild, ViewContainerRef } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { Toast } from 'primeng/toast';
+import { MessageService } from 'primeng/api';
 import { Subscription } from 'rxjs';
 import { HeaderService } from '../utils/header.service';
 import { UserMenu } from './user-menu/user-menu';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, UserMenu],
+  imports: [RouterOutlet, UserMenu, Toast],
+  providers: [MessageService],
   templateUrl: './app.html',
   styleUrl: './app.scss',
   changeDetection: ChangeDetectionStrategy.OnPush

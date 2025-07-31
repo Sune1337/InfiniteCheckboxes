@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { Dialog } from 'primeng/dialog';
+import { MessageService } from 'primeng/api';
 import { combineLatest, filter, Subject, takeUntil } from 'rxjs';
 import { HeaderService } from '../../utils/header.service';
 import { MinesweeperHubService } from '#minesweeperHubService';
@@ -56,6 +57,7 @@ export class MinesweeperComponent implements OnInit, AfterViewInit, OnDestroy {
   private activatedRoute = inject(ActivatedRoute);
   private minesweeperHubService = inject(MinesweeperHubService);
   private checkboxesHubService = inject(CheckboxesHubService);
+  private messageService = inject(MessageService);
 
   // Keep track of subscriptions to clean up when component destroys.
   private ngUnsubscribe = new Subject<void>();
@@ -170,7 +172,7 @@ export class MinesweeperComponent implements OnInit, AfterViewInit, OnDestroy {
       const minesweeperId = await this.minesweeperHubService.createGame(parseInt(this.selectedWidth()), parseInt(this.selectedNumberOfMines()), luckyStart);
       this.router.navigate(['Minesweeper', minesweeperId]);
     } catch (error: any) {
-      alert(getErrorMessage(error));
+      this.messageService.add({ severity: 'error', detail: getErrorMessage(error) });
     }
   }
 
@@ -190,7 +192,7 @@ export class MinesweeperComponent implements OnInit, AfterViewInit, OnDestroy {
       await this.checkboxesHubService.setChecked(this.currentFlagPageId(), index, flagged);
     } catch (error) {
       this.setFlag(index, !flagged);
-      alert(getErrorMessage(error));
+      this.messageService.add({ severity: 'error', detail: getErrorMessage(error) });
     }
   }
 

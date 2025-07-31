@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, OnDestroy, OnInit, output, signal, untracked, ViewChild, WritableSignal } from '@angular/core';
 import { Scroller } from 'primeng/scroller';
+import { MessageService } from 'primeng/api';
 import { Subject, takeUntil } from 'rxjs';
 import { CheckboxesHubService, CheckboxPage, PageGoldSpots } from '#checkboxesHubService';
 import { LimitPipe } from '../../utils/limit-pipe';
@@ -52,6 +53,7 @@ export class CheckboxGrid implements OnInit, OnDestroy {
   private readonly MaxPageId = BigInt('0x' + 'F'.repeat(64));
 
   private checkboxHubService = inject(CheckboxesHubService);
+  private messageService = inject(MessageService);
 
   // Keep track of subscriptions to clean up when component destroys.
   private ngUnsubscribe = new Subject<void>();
@@ -107,7 +109,7 @@ export class CheckboxGrid implements OnInit, OnDestroy {
     try {
       pageId = await this.parseStringToBigInt(id);
     } catch (error: any) {
-      alert(getErrorMessage(error));
+      this.messageService.add({ severity: 'error', detail: getErrorMessage(error) });
       return;
     }
 
@@ -187,7 +189,7 @@ export class CheckboxGrid implements OnInit, OnDestroy {
       await this.checkboxHubService.setChecked(BigInt(pageId), index, isChecked);
     } catch (error: any) {
       checkboxElement.checked = !isChecked
-      alert(getErrorMessage(error));
+      this.messageService.add({ severity: 'error', detail: getErrorMessage(error) });
     }
   }
 
