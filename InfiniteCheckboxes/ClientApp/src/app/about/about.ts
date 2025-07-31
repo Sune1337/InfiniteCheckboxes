@@ -2,11 +2,13 @@ import { AfterViewInit, Component, inject, OnDestroy, TemplateRef, ViewChild } f
 import { Meta, Title } from '@angular/platform-browser';
 import { HeaderService } from '../../utils/header.service';
 import { RouterLink } from '@angular/router';
+import { Card } from 'primeng/card';
 
 @Component({
   selector: 'app-about',
   imports: [
-    RouterLink
+    RouterLink,
+    Card
   ],
   templateUrl: './about.html',
   styleUrl: './about.scss'

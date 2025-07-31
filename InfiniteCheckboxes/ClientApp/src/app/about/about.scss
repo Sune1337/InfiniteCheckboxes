@@ -4,6 +4,9 @@
 }
 
 .content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
   width: 800px;
   max-width: 100%;
 }
