@@ -4,8 +4,8 @@ import { CheckboxStatistics } from './models/checkbox-statistics';
 import { GlobalStatistics } from './models/global-statistics';
 import { UserBalance } from './models/user-balance';
 
-export type CheckboxPages = { [id: string]: boolean[] };
-export type GoldSpots = { [id: string]: number[] };
+export type CheckboxPage = { id: string, state: boolean[] };
+export type PageGoldSpots = { id: string, state: number[] };
 export type CheckboxPageStatistics = { [id: string]: CheckboxStatistics };
 
 @Injectable({
@@ -13,8 +13,8 @@ export type CheckboxPageStatistics = { [id: string]: CheckboxStatistics };
 })
 export class CheckboxesHubService {
 
-  public checkboxPages: Subject<CheckboxPages> = new BehaviorSubject({});
-  public goldSpots: Subject<GoldSpots> = new BehaviorSubject({});
+  public checkboxPages: Subject<CheckboxPage> = new BehaviorSubject({ id: '0', state: Array(4096) });
+  public goldSpots: Subject<PageGoldSpots> = new BehaviorSubject({ 'id': '0', state: Array(0) });
   public checkboxStatistics: Subject<CheckboxPageStatistics> = new BehaviorSubject({});
   public globalStatistics: Subject<GlobalStatistics> = new BehaviorSubject({ NumberOfChecked: 0 });
   public user: Subject<UserBalance> = new BehaviorSubject({ GoldBalance: 0 });

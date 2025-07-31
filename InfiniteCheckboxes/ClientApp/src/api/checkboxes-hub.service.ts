@@ -12,8 +12,10 @@ import { UserBalance } from './models/user-balance';
 import { createTrackedSubject } from '../utils/tracked-subject';
 import { getLocalUserId } from '#userUtils';
 
-export type CheckboxPages = { [id: string]: boolean[] };
-export type GoldSpots = { [id: string]: number[] };
+export type CheckboxPage = { id: string, state: boolean[] };
+export type CheckboxPages = { [id: string]: CheckboxPage };
+export type PageGoldSpots = { id: string, state: number[] };
+export type GoldSpots = { [id: string]: PageGoldSpots };
 export type CheckboxPageStatistics = { [id: string]: CheckboxStatistics };
 type CheckboxSubscriptionParameters = { subscribeToStatistics: boolean };
 
@@ -22,8 +24,8 @@ type CheckboxSubscriptionParameters = { subscribeToStatistics: boolean };
 })
 export class CheckboxesHubService {
 
-  public checkboxPages: Subject<CheckboxPages>;
-  public goldSpots: Subject<GoldSpots>;
+  public checkboxPages: Subject<CheckboxPage>;
+  public goldSpots: Subject<PageGoldSpots>;
   public checkboxStatistics: Subject<CheckboxPageStatistics>;
   public globalStatistics: Subject<GlobalStatistics>;
   public user: Subject<UserBalance>;
@@ -43,8 +45,8 @@ export class CheckboxesHubService {
     this.hubConnectionObservable = this.createHubConnectionObservable();
 
     // Create subjects.
-    this.checkboxPages = createTrackedSubject(() => new Subject<CheckboxPages>(), this.whenSubscribed, this.whenUnsubscribed);
-    this.goldSpots = createTrackedSubject(() => new Subject<GoldSpots>(), this.whenSubscribed, this.whenUnsubscribed);
+    this.checkboxPages = createTrackedSubject(() => new Subject<CheckboxPage>(), this.whenSubscribed, this.whenUnsubscribed);
+    this.goldSpots = createTrackedSubject(() => new Subject<PageGoldSpots>(), this.whenSubscribed, this.whenUnsubscribed);
     this.checkboxStatistics = createTrackedSubject(() => new Subject<CheckboxPageStatistics>(), this.whenSubscribed, this.whenUnsubscribed);
     this.globalStatistics = createTrackedSubject(() => new ReplaySubject<GlobalStatistics>(1), this.whenSubscribed, this.whenUnsubscribed);
     this.user = createTrackedSubject(() => new ReplaySubject<UserBalance>(1), this.whenSubscribed, this.whenUnsubscribed);
@@ -69,12 +71,12 @@ export class CheckboxesHubService {
         }
 
         if (compressedBytes === null) {
-          this.privateCheckboxPages[hexId] = Array(4096);
+          this.privateCheckboxPages[hexId] = { id: hexId, state: Array(4096) };
         } else {
-          this.privateCheckboxPages[hexId] = decompressBitArray(compressedBytes);
+          this.privateCheckboxPages[hexId] = { id: hexId, state: decompressBitArray(compressedBytes) };
         }
 
-        this.checkboxPages.next(this.privateCheckboxPages);
+        this.checkboxPages.next(this.privateCheckboxPages[hexId]);
       });
   }
 
@@ -128,12 +130,12 @@ export class CheckboxesHubService {
             const byteId = bigIntToMinimalBytes(bigIntId);
             const compressedBytes = await hubConnection.invoke(`CheckboxesSubscribe`, byteId, this.checkboxPageSubscriptions[hexId]?.subscribeToStatistics ?? false);
             if (compressedBytes === null) {
-              this.privateCheckboxPages[hexId] = Array(4096);
+              this.privateCheckboxPages[hexId] = { id: hexId, state: Array(4096) };
             } else {
-              this.privateCheckboxPages[hexId] = decompressBitArray(compressedBytes);
+              this.privateCheckboxPages[hexId] = { id: hexId, state: decompressBitArray(compressedBytes) };
             }
 
-            this.checkboxPages.next(this.privateCheckboxPages);
+            this.checkboxPages.next(this.privateCheckboxPages[hexId]);
           }
         });
     }
@@ -154,30 +156,30 @@ export class CheckboxesHubService {
     // Listen for updated checkbox-pages.
     hubConnection.on('CheckboxesUpdate', (bytePageId: Uint8Array, data: Uint8Array) => {
       const pageId = bytesToHexString(bytePageId);
-      const items = this.privateCheckboxPages[pageId];
-      if (!items) {
+      const checkboxPage = this.privateCheckboxPages[pageId];
+      if (!checkboxPage) {
         return;
       }
 
       const values = decompressIndexAndBoolArray(data);
       for (const value of values) {
-        items[value[0]] = value[1];
+        checkboxPage.state[value[0]] = value[1];
       }
 
-      this.checkboxPages.next(this.privateCheckboxPages);
+      this.checkboxPages.next(checkboxPage);
     });
 
     // Listen for updated gold spots.
     hubConnection.on(`GoldSpot`, (bytePageId: Uint8Array, values: number[]) => {
       const pageId = bytesToHexString(bytePageId);
-      const items = this.privateGoldSpots[pageId] ?? [];
+      const pageGoldSpots = this.privateGoldSpots[pageId] ?? { id: pageId, state: [] };
 
       for (const value of values) {
-        items.push(value);
+        pageGoldSpots.state.push(value);
       }
 
-      this.privateGoldSpots[pageId] = items;
-      this.goldSpots.next(this.privateGoldSpots);
+      this.privateGoldSpots[pageId] = pageGoldSpots;
+      this.goldSpots.next(pageGoldSpots);
     });
 
     // Listen for checkbox-page statistics.

@@ -33,12 +33,12 @@ export class MinesweeperComponent implements OnInit, AfterViewInit, OnDestroy {
   protected selectedWidth = signal<any>(this.widthOptions[0]);
   protected minesOptions = computed(() => this.createNumberOfMinesOptions(this.selectedWidth()))
   protected selectedNumberOfMines = signal<any>(this.widthOptions[0]);
+  protected currentMinesweeperId = signal(BigInt(0));
   protected minesweeper = signal<Minesweeper | null>(null);
   protected flagPage = signal<boolean[] | null>(null);
   protected checkboxStyles = new Subject<(string | null)[]>();
 
   private bigintZero = BigInt(0);
-  private currentMinesweeperId = signal(BigInt(0));
   private currentFlagPageId = signal(BigInt(0));
   private currentSweepPageId?: bigint;
   private sweeped?: boolean[] = [];
@@ -87,18 +87,18 @@ export class MinesweeperComponent implements OnInit, AfterViewInit, OnDestroy {
     // Register callback to handle updates to checkbox pages.
     this.checkboxesHubService.checkboxPages
       .pipe(takeUntil(this.ngUnsubscribe))
-      .subscribe(checkboxPages => {
+      .subscribe(checkboxPage => {
         const hexFlagPageId = bigIntToHexString(this.currentFlagPageId());
         const flagPage = this.flagPage();
-        if ((!flagPage && checkboxPages[hexFlagPageId]) || (flagPage && checkboxPages[hexFlagPageId] && !checkboxPages[hexFlagPageId].every((element, index) => element === flagPage[index]))) {
-          this.flagPage.set([...checkboxPages[hexFlagPageId]]);
-          this.flags.next(checkboxPages[hexFlagPageId]);
+        if ((!flagPage && checkboxPage.id == hexFlagPageId) || (flagPage && checkboxPage.id == hexFlagPageId && !checkboxPage.state.every((element, index) => element === flagPage[index]))) {
+          this.flagPage.set([...checkboxPage.state]);
+          this.flags.next(checkboxPage.state);
         }
 
         if (this.currentSweepPageId) {
           const hexSweepPageId = bigIntToHexString(this.currentSweepPageId);
-          if (checkboxPages[hexSweepPageId]) {
-            this.sweeped = checkboxPages[hexSweepPageId];
+          if (checkboxPage.id == hexSweepPageId) {
+            this.sweeped = checkboxPage.state;
           }
         }
       });
@@ -218,18 +218,20 @@ export class MinesweeperComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private updateSubscriptions = (id: bigint, sweepLocationId: bigint, flagLocationId: bigint): void => {
     // Update minesweeper subscription.
-    const currentMineSweeperId = this.currentMinesweeperId();
+    let currentMineSweeperId = this.currentMinesweeperId();
     if (currentMineSweeperId && currentMineSweeperId !== id) {
       this.minesweeperHubService.unsubscribeToMinesweeper(currentMineSweeperId);
-      this.currentMinesweeperId.set(this.bigintZero);
+      currentMineSweeperId = this.bigintZero;
       this.minesweeper.set(null);
       this.counts.next({});
     }
 
     if (id && currentMineSweeperId !== id) {
-      this.currentMinesweeperId.set(id);
+      currentMineSweeperId = id;
       this.minesweeperHubService.subscribeToMinesweeper(id);
     }
+
+    this.currentMinesweeperId.set(currentMineSweeperId);
 
     // Update sweep-location subscription.
     const currentSweepLocationId = this.currentSweepPageId;

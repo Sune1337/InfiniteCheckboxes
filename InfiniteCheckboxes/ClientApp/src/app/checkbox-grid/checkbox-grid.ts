@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, OnDestroy, OnInit, output, signal, untracked, ViewChild, WritableSignal } from '@angular/core';
 import { Scroller } from 'primeng/scroller';
 import { Subject, takeUntil } from 'rxjs';
-import { CheckboxesHubService, CheckboxPages, GoldSpots } from '#checkboxesHubService';
+import { CheckboxesHubService, CheckboxPage, PageGoldSpots } from '#checkboxesHubService';
 import { LimitPipe } from '../../utils/limit-pipe';
 import { getErrorMessage } from '../../utils/get-error-message';
 import { ContextMenuDirective } from '../../utils/context-menu.directive';
 
-interface CheckboxPage {
+interface CheckboxPageForView {
   pageId: bigint;
   state: WritableSignal<boolean[]>;
   goldSpots: WritableSignal<number[]>;
@@ -36,7 +36,7 @@ export class CheckboxGrid implements OnInit, OnDestroy {
 
   // Generate grid-template-columns value.
   protected gridColumns = computed(() => `repeat(${this.gridWidth()}, 24px)`);
-  protected checkBoxPages = signal<CheckboxPage[] | null>(null);
+  protected checkBoxPages = signal<CheckboxPageForView[] | null>(null);
 
   // The returned value of itemSize must match the values in checkboxes.scss.
   protected itemSize = computed<number>(() => 4096 / this.gridWidth() * this.rowHeight);
@@ -207,7 +207,7 @@ export class CheckboxGrid implements OnInit, OnDestroy {
   }
 
 
-  protected trackCheckboxPage = (index: number, item: CheckboxPage): any => {
+  protected trackCheckboxPage = (index: number, item: CheckboxPageForView): any => {
     return item.pageId;
   }
 
@@ -254,40 +254,33 @@ export class CheckboxGrid implements OnInit, OnDestroy {
     }
   }
 
-  private checkboxPageUpdated(updatedCheckboxPages: CheckboxPages) {
+  private checkboxPageUpdated(updatedCheckboxPage: CheckboxPage) {
     const checkboxPages = [...this.checkBoxPages() || []];
 
-    for (const key of Object.keys(updatedCheckboxPages)) {
-      const id = BigInt(`0x${key}`);
-      for (const item of checkboxPages) {
-        if (item.pageId === id) {
-          item.state.set(updatedCheckboxPages[key]);
-          item.checkboxStyles.set(this.checkboxStyles());
-        }
+    const id = BigInt(`0x${updatedCheckboxPage.id}`);
+    for (const item of checkboxPages) {
+      if (item.pageId === id) {
+        item.state.set(updatedCheckboxPage.state);
+        item.checkboxStyles.set(this.checkboxStyles());
       }
     }
 
     this.checkBoxPages.set(checkboxPages);
   }
 
-  private goldSpotsUpdated = (goldSpots: GoldSpots): void => {
+  private goldSpotsUpdated = (goldSpots: PageGoldSpots): void => {
     const checkboxPages = [...this.checkBoxPages() || []];
-    const keys = Object.keys(goldSpots);
-
-    for (const key of keys) {
-      const pageId = BigInt(`0x${key}`);
-      const checkboxPage = checkboxPages.find(p => p.pageId === pageId);
-      if (!checkboxPage) {
-        continue;
-      }
-
-      checkboxPage.goldSpots.set(goldSpots[key]);
+    const goldSpotsPageId = BigInt(`0x${goldSpots.id}`);
+    const checkboxPage = checkboxPages.find(p => p.pageId === goldSpotsPageId);
+    if (!checkboxPage) {
+      return;
     }
 
+    checkboxPage.goldSpots.set(goldSpots.state);
     this.checkBoxPages.set(checkboxPages);
   }
 
-  private whenPageWidthChange = (gridWidth: number, checkboxPages: CheckboxPage[] | null) => {
+  private whenPageWidthChange = (gridWidth: number, checkboxPages: CheckboxPageForView[] | null) => {
     const nativeElement = this.scroller?.getElementRef()?.nativeElement;
     if (!nativeElement || !checkboxPages) {
       return;
@@ -316,7 +309,7 @@ export class CheckboxGrid implements OnInit, OnDestroy {
     const lastIndex = currentItems[currentItems.length - 1].pageId;
     if (lastIndex >= this.MaxPageId) return;
 
-    const newItems: CheckboxPage[] = [];
+    const newItems: CheckboxPageForView[] = [];
     let nextIndex = lastIndex + BigInt(1);
 
     for (let i = 0; i < 1 && nextIndex <= this.MaxPageId; i++) {
@@ -334,7 +327,7 @@ export class CheckboxGrid implements OnInit, OnDestroy {
     const firstIndex = currentItems[0].pageId;
     if (firstIndex <= this.MinPageId) return 0;
 
-    const newItems: CheckboxPage[] = [];
+    const newItems: CheckboxPageForView[] = [];
     let prevIndex = firstIndex - BigInt(1);
 
     for (let i = 0; i < 1 && prevIndex >= this.MinPageId; i++) {
@@ -365,7 +358,7 @@ export class CheckboxGrid implements OnInit, OnDestroy {
     this.checkBoxPages.set([...checkboxPages]);
   }
 
-  private createCheckboxPage(pageId: bigint): CheckboxPage {
+  private createCheckboxPage(pageId: bigint): CheckboxPageForView {
     return {
       pageId: pageId,
       state: signal(Array(4096)),
