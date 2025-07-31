@@ -9,7 +9,7 @@
 
     <ItemGroup>
       <PackageReference Include="Microsoft.Orleans.Sdk" Version="9.2.1" />
-      <PackageReference Include="StackExchange.Redis" Version="2.8.41" />
+      <PackageReference Include="StackExchange.Redis" Version="2.8.58" />
     </ItemGroup>
 
     <ItemGroup>
