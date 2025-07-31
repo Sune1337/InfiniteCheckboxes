@@ -41,29 +41,28 @@
         <tr>
           <td>Game-size:</td>
           <td>
-            <select [(ngModel)]="selectedWidth">
-              @for (width of widthOptions; track width; let index = $index) {
-                <option value="{{width}}" [selected]="index == 0">{{ width }} x {{ width }}</option>
-              }
-            </select>
+            <p-select [options]="widthOptions" [(ngModel)]="selectedWidth">
+              <ng-template #item let-item>
+                {{ item }} x {{ item }}
+              </ng-template>
+              <ng-template #selectedItem let-item>
+                {{ item }} x {{ item }}
+              </ng-template>
+            </p-select>
           </td>
         </tr>
 
         <tr>
           <td>Number of mines:</td>
           <td>
-            <select [(ngModel)]="selectedNumberOfMines">
-              @for (noMines of minesOptions(); track noMines; let index = $index) {
-                <option value="{{noMines}}" [selected]="index == 0">{{ noMines }}</option>
-              }
-            </select>
+            <p-select [options]="minesOptions()" [(ngModel)]="selectedNumberOfMines"/>
           </td>
         </tr>
 
         <tr>
-          <td colspan="2">
-            <button (click)="whenStartClick(false)" style="margin-right: 1rem">Start</button>
-            <button (click)="whenStartClick(true)">Lucky start</button>
+          <td colspan="2" style="padding-top: 1rem; text-align: center;">
+            <p-button (click)="whenStartClick(false)" label="Start" [style]="{ 'margin-right': '1rem' }"/>
+            <p-button (click)="whenStartClick(true)" label="Lucky start"/>
           </td>
         </tr>
         </tbody>

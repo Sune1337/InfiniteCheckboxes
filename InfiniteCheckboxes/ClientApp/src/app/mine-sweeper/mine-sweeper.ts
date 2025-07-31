@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { Dialog } from 'primeng/dialog';
+import { Button } from 'primeng/button';
+import { Select } from 'primeng/select';
 import { MessageService } from 'primeng/api';
 import { combineLatest, filter, Subject, takeUntil } from 'rxjs';
 import { HeaderService } from '../../utils/header.service';
@@ -22,7 +24,9 @@ import { Timer } from './timer/timer';
     CheckboxGrid,
     AsyncPipe,
     Timer,
-    Dialog
+    Dialog,
+    Button,
+    Select
   ],
   templateUrl: './mine-sweeper.html',
   styleUrl: './mine-sweeper.scss'
