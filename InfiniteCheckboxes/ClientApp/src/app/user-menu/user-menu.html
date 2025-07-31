@@ -43,22 +43,24 @@
             The account-details are used to track your progress. It will be lost if you clear the browser cache.
             If you want to use it in another browser, save it somewhere so you can copy-paste it there.
           </p>
+
           <p>
             Your username can be displayed to other users.
           </p>
+
+          <div style="display: flex">
+            <p-floatlabel variant="on">
+              <input pInputText id="userName" [(ngModel)]="localUser.userName" autocomplete="off"/>
+              <label for="on_label">Username</label>
+            </p-floatlabel>
+
+            <p-floatlabel variant="on">
+              <p-password id="userId" [(ngModel)]="localUser.userId" autocomplete="off" [feedback]="false" [toggleMask]="true"/>
+              <label for="in_label">User Id</label>
+            </p-floatlabel>
+          </div>
           <p>
-          <table>
-            <tr>
-              <td>UserId</td>
-              <td><input type="text" [(ngModel)]="localUser.userId"></td>
-            </tr>
-            <tr>
-              <td>Username</td>
-              <td><input type="text" [(ngModel)]="localUser.userName"></td>
-            </tr>
-          </table>
-          <p>
-            <button (click)="whenSaveButtonClick()">Save and reload page</button>
+            <p-button (click)="whenSaveButtonClick()" label="Save and reload page"/>
           </p>
         } @else {
           <p>You are not logged in.</p>

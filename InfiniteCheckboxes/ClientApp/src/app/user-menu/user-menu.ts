@@ -2,6 +2,10 @@ import { ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit, signal }
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Popover } from 'primeng/popover';
+import { FloatLabel } from 'primeng/floatlabel';
+import { InputText } from 'primeng/inputtext';
+import { Password } from 'primeng/password';
+import { Button } from 'primeng/button';
 import { Subject, takeUntil } from 'rxjs';
 import { UserService } from '#userService';
 import { setLocalUser } from '#userUtils';
@@ -19,7 +23,11 @@ import { LocalUser } from '../../services/models/local-user';
     Accordion,
     AccordionPanel,
     Top10Highscore,
-    Popover
+    Popover,
+    FloatLabel,
+    InputText,
+    Password,
+    Button
   ],
   templateUrl: './user-menu.html',
   styleUrl: './user-menu.scss',
