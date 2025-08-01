@@ -1,0 +1,5 @@
+.p-virtualscroller {
+  // Disable scroll anchoring because it is not supported by many browsers. Safari on iPhone for example.
+  // Maintain position manually instead.
+  overflow-anchor: none;
+}

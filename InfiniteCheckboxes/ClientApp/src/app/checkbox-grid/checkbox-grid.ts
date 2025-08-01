@@ -337,13 +337,30 @@ export class CheckboxGrid implements OnInit, OnDestroy {
       prevIndex = prevIndex - BigInt(1);
     }
 
-    // Maintain scroll position when adding items at start
-    this.checkBoxPages.set([...newItems, ...currentItems]);
-    setTimeout(() => {
-      const newScrollOffset = scrollTop + (newItems.length * this.itemSize());
-      this.scroller.scrollTo({ top: newScrollOffset });
-    });
+    const element = this.scroller.getElementRef().nativeElement;
+    if (element) {
+      // Maintain scroll position when adding items at start
+      const isIOS = /(iPad|iPhone|iPod)/g.test(navigator.userAgent);
+      if (isIOS) {
+        // Updating scrollTop on IOS does not work well while scrolling.
+        // If drag-scrolling, the grid will start scrolling very fast up.
+        // This hack aborts the scroll which is better.
 
+        // Disable scrolling
+        const orgStyle = element.style.overflow;
+        element.style.overflow = 'hidden';
+
+        // Adjust scroll.
+        element.scrollTop = scrollTop + (newItems.length * this.itemSize());
+
+        // Enable scrolling
+        element.style.overflow = orgStyle;
+      } else {
+        element.scrollTop = scrollTop + (newItems.length * this.itemSize());
+      }
+    }
+
+    this.checkBoxPages.set([...newItems, ...currentItems]);
     return newItems.length;
   }
 
