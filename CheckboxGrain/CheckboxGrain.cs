@@ -4,7 +4,7 @@ using BitCoding;
 
 using global::CheckboxGrain.Models;
 
-using GrainInterfaces;
+using GrainInterfaces.Checkbox;
 using GrainInterfaces.GoldDigger;
 using GrainInterfaces.User;
 

@@ -4,7 +4,7 @@ using BitCoding;
 
 using global::MinesweeperGrain.Models;
 
-using GrainInterfaces;
+using GrainInterfaces.Checkbox;
 using GrainInterfaces.Highscore;
 using GrainInterfaces.Minesweeper;
 using GrainInterfaces.Minesweeper.Models;

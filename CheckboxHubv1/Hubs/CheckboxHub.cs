@@ -7,7 +7,7 @@ using CheckboxHubv1.CheckboxObserver;
 using CheckboxHubv1.Statistics;
 using CheckboxHubv1.UserObserver;
 
-using GrainInterfaces;
+using GrainInterfaces.Checkbox;
 using GrainInterfaces.GoldDigger;
 using GrainInterfaces.User;
 

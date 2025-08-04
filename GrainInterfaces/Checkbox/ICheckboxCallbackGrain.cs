@@ -1,4 +1,4 @@
-namespace GrainInterfaces;
+namespace GrainInterfaces.Checkbox;
 
 public interface ICheckboxCallbackGrain : IAddressable
 {

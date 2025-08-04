@@ -2,7 +2,7 @@ namespace WarGrain.WarGame;
 
 using System.Security.Cryptography;
 
-using GrainInterfaces;
+using GrainInterfaces.Checkbox;
 using GrainInterfaces.War;
 using GrainInterfaces.War.Models;
 
