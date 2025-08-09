@@ -17,6 +17,11 @@ export const routes: Routes = [
       { path: ':id', loadComponent: () => import('./mine-sweeper/mine-sweeper').then(m => m.MinesweeperComponent) }
     ]
   },
+  {
+    path: 'LightsOut', loadComponent: () => import('./lights-out/lights-out').then(m => m.LightsOutComponent), children: [
+      { path: ':id', loadComponent: () => import('./lights-out/lights-out').then(m => m.LightsOutComponent) }
+    ]
+  },
   { path: 'About', component: About },
   { path: '', component: About, pathMatch: 'full' },
   { path: '**', redirectTo: '/' }

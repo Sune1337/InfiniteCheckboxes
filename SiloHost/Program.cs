@@ -100,6 +100,11 @@ var builder = Host.CreateDefaultBuilder(args)
                 options.DatabaseName = "MinesweeperGrains";
                 options.CreateShardKeyForCosmos = false;
             })
+            .AddMongoDBGrainStorage("LightsOutStore", options =>
+            {
+                options.DatabaseName = "LightsOutGrains";
+                options.CreateShardKeyForCosmos = false;
+            })
             .ConfigureEndpoints(TcpPorts.GetNextFreeTcpPort(11111), TcpPorts.GetNextFreeTcpPort(30000));
 
         var podNamespace = hostBuilderContext.Configuration.GetValue<string>("POD_NAMESPACE");

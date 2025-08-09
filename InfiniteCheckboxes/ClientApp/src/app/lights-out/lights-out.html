@@ -1,0 +1,84 @@
+<ng-template #headerTemplate>
+  <div class="header">
+    <h1 class="for-seo-only">Play lights out</h1>
+    <div class="flex-container">
+      <div>
+        <a href="javascript:void(0)" (click)="helpDialogOpen.set(true)"><span class="help-link">?</span></a>
+      </div>
+
+      @if (currentLightsOutId()) {
+        @if (lightsOut(); as lightsOut) {
+          @if (!lightsOut.StartUtc) {
+            <div>Click to start the game</div>
+          } @else {
+            <div>
+              <app-timer [startDate]="lightsOut.StartUtc" [endDate]="lightsOut.EndUtc"></app-timer>
+            </div>
+
+            @if (lightsOut.EndUtc) {
+              <div>You finished!</div>
+            }
+          }
+        }
+      } @else {
+        <div>
+          Create a new game to start playing
+        </div>
+      }
+    </div>
+  </div>
+</ng-template>
+
+<div class="lights-out-container">
+  @if (!currentLightsOutId()) {
+    <div class="new-game-container">
+      <table>
+        <tbody>
+        <tr>
+          <td>Game-size:</td>
+          <td>
+            <p-select [options]="widthOptions" [(ngModel)]="selectedWidth">
+              <ng-template #item let-item>
+                {{ item }} x {{ item }}
+              </ng-template>
+              <ng-template #selectedItem let-item>
+                {{ item }} x {{ item }}
+              </ng-template>
+            </p-select>
+          </td>
+        </tr>
+
+        <tr>
+          <td colspan="2" style="padding-top: 1rem; text-align: center;">
+            <p-button (click)="whenStartClick()" label="Start" [style]="{ 'margin-right': '1rem' }"/>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <div class="checkbox-container">
+      @if (lightsOut(); as lightsOut) {
+        <app-checkbox-grid
+          [gridWidth]="lightsOut.Width"
+          [maxSize]="lightsOut.Width * lightsOut.Width"
+          [locationId]="`0x${lightsOut.LightsLocationId}`"
+        >
+        </app-checkbox-grid>
+      }
+    </div>
+  }
+</div>
+
+<p-dialog header="Lights out" [modal]="true" [(visible)]="helpDialogOpen" [dismissableMask]="true" styleClass="help-dialog">
+  <p>
+    Click a box to flip it on or off. When you flip a box, all adjacent boxes will be flipped as well.
+    The goal is to uncheck all boxes.
+  </p>
+
+  <p>
+    Since you can simply learn how to solve this puzzle, there's no highscore list. That also means if you want a brain-teaser, don't use FavouriteSearchEngine™!
+  </p>
+
+  <p>Oh, and also, all the puzzles are solvable. When a board is created it simply clicks random checkboxes and also toggles directly adjacent boxes just as playing the game.</p>
+</p-dialog>

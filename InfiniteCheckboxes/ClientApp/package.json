@@ -73,6 +73,10 @@
     "#checkboxesHubService": {
       "browser": "./src/api/checkboxes-hub.service.ts",
       "default": "./src/api/checkboxes-hub.service.server.ts"
+    },
+    "#lightsOutHubService": {
+      "browser": "./src/api/lights-out-hub.service.ts",
+      "default": "./src/api/lights-out-hub.service.server.ts"
     }
   }
 }

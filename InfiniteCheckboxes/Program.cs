@@ -4,6 +4,8 @@ using CheckboxHubv1;
 
 using InfiniteCheckboxes.Utils;
 
+using LightsOutHubv1;
+
 using MinesweeperHubv1;
 
 using OpenTelemetry;
@@ -62,6 +64,7 @@ builder.Services.AddDefaultExceptionHandler();
 builder.Services.AddCheckboxServices();
 builder.Services.AddWarObserverService();
 builder.Services.AddMinesweeperObserverService();
+builder.Services.AddLightsOutObserverService();
 builder.Services.AddHsts(options =>
 {
     options.MaxAge = TimeSpan.FromDays(365);
@@ -127,6 +130,7 @@ app.UseAuthorization();
 app.MapCheckboxHubv1("/hubs/v1/CheckboxHub");
 app.MapWarHubv1("/hubs/v1/WarHub");
 app.MapMinesweeperHubv1("/hubs/v1/MinesweeperHub");
+app.MapLightsOutHubv1("/hubs/v1/LightsOutHub");
 
 // If we use MVC controllers.
 app.MapControllerRoute(
